@@ -1,0 +1,212 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// --- 인증 관련 모델 ---
+model Account {
+  id                String  @id @default(cuid()) // ID 타입을 문자열로 변경 (cuid 또는 uuid 권장)
+  userId            String  // User 모델의 ID 타입과 일치
+  type              String
+  provider          String  // 예: "google"
+  providerAccountId String  // Google에서 제공하는 사용자 ID
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId]) // 각 제공자별 계정 ID는 고유해야 함
+  @@index([userId]) // userId로 검색 최적화
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String   // User 모델의 ID 타입과 일치
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId]) // userId로 검색 최적화
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+
+  // 워크스페이스 관련 관계 추가
+  createdWorkspaces Workspace[]     @relation("CreatedWorkspaces") // 이 사용자가 생성한 워크스페이스 목록
+  workspaceUsers    WorkspaceUser[] // 이 사용자가 참여하고 있는 워크스페이스 멤버십 정보
+  sentInvitations   Invitation[]    @relation("SentInvitations") // 이 사용자가 보낸 초대 목록 (선택적)
+
+  // --- 해결: Transaction과의 양방향 관계 설정 ---
+  createdTransactions Transaction[] @relation("UserTransactions") // 사용자가 생성한 거래내역 목록
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token]) // 복합 고유 키
+}
+
+// --- 기존 모델들 (Transaction, Category, Budget) ---
+// Transaction, Category, Budget 모델은 Phase 2에서 Workspace와 연결되도록 수정될 예정입니다.
+// 지금은 그대로 두거나, User 모델과 직접 연결하지 않습니다.
+
+model Transaction {
+  id            Int      @id @default(autoincrement())
+  date          DateTime
+  amount        Float
+  type          String   // "income" 또는 "expense"
+  description   String?
+  categoryId    Int
+  category      Category @relation(fields: [categoryId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  isInstallment            Boolean? @default(false)
+  installmentMonths        Int?
+  currentInstallmentNumber Int?
+  totalInstallmentAmount   Float?
+  originalTransactionId    Int?
+  estimatedInstallmentFee  Float?
+  installmentCardIssuer    String?
+
+  // --- 워크스페이스 연결 추가 ---
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade) // 워크스페이스 삭제 시 관련 거래내역도 삭제
+
+  // --- 거래 내역 작성자 연결 (선택적, 필요시 User 모델도 수정하여 양방향 관계 설정) ---
+  createdById String? // User 모델의 id와 연결
+  // --- 해결: 관계 이름 명시 ---
+  createdBy   User?   @relation("UserTransactions", fields: [createdById], references: [id], onUpdate: NoAction, onDelete: SetNull) // 작성자 삭제 시 거래내역은 유지, createdById는 null로
+
+
+  @@index([date])
+  @@index([type])
+  @@index([categoryId])
+  @@index([workspaceId]) // 워크스페이스별 조회 최적화
+  @@index([createdById]) // 작성자별 조회 최적화 (선택적)
+  @@index([isInstallment, originalTransactionId])
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String
+  type         String        // "income" 또는 "expense"
+  transactions Transaction[]
+  budgets      Budget[]
+
+  // --- 워크스페이스 연결 추가 ---
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade) // 워크스페이스 삭제 시 관련 카테고리도 삭제
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, name, type]) // 워크스페이스 내에서 카테고리 이름과 타입은 고유
+  @@index([type])
+  @@index([workspaceId])
+}
+
+model Budget {
+  id         Int      @id @default(autoincrement())
+  month      String   //<y_bin_46>-MM 형식
+  categoryId Int
+  amount     Float
+  category   Category @relation(fields: [categoryId], references: [id]) // onDelete는 Category 모델의 기본 설정 따름 (보통 Restrict 또는 NoAction)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // --- 워크스페이스 연결 추가 ---
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade) // 워크스페이스 삭제 시 관련 예산도 삭제
+
+  @@unique([workspaceId, month, categoryId]) // 워크스페이스별, 월별, 카테고리별 예산은 고유
+  @@index([month])
+  @@index([workspaceId])
+}
+
+enum WorkspaceRole {
+  ADMIN
+  MEMBER
+  // VIEWER // 필요시 추가
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String   // 워크스페이스를 생성한 사용자의 ID (User 모델의 id와 연결)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner        User            @relation("CreatedWorkspaces", fields: [ownerId], references: [id])
+  users        WorkspaceUser[] // 이 워크스페이스에 속한 사용자들 (WorkspaceUser 모델과 연결)
+
+  // 워크스페이스에 귀속되는 데이터들
+  transactions Transaction[]
+  budgets      Budget[]
+  categories   Category[]
+  invitations  Invitation[]    // 이 워크스페이스로 보내진 초대들 (선택적 기능)
+
+  @@index([ownerId])
+}
+
+model WorkspaceUser {
+  id          String        @id @default(cuid())
+  userId      String        // User 모델의 id와 연결
+  workspaceId String        // Workspace 모델의 id와 연결
+  role        WorkspaceRole // 위에서 정의한 WorkspaceRole Enum 사용
+  joinedAt    DateTime      @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade) // 사용자가 삭제되면 멤버십도 삭제
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade) // 워크스페이스가 삭제되면 멤버십도 삭제
+
+  @@unique([userId, workspaceId]) // 사용자는 하나의 워크스페이스에 중복 참여 불가
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+enum InvitationStatus {
+  PENDING  // 초대 발송, 수락 대기 중
+  ACCEPTED // 초대 수락됨
+  DECLINED // 초대 거절됨
+  EXPIRED  // 초대 만료됨
+}
+
+model Invitation {
+  id          String           @id @default(cuid())
+  email       String           // 초대받는 사람의 이메일
+  workspaceId String           // 어느 워크스페이스로의 초대인지
+  role        WorkspaceRole    // 초대 시 부여할 역할
+  status      InvitationStatus @default(PENDING) // 초대 상태
+  token       String           @unique @default(uuid()) // 초대 수락을 위한 고유 토큰
+  expiresAt   DateTime         // 초대 만료 시간
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedById String    // 초대한 사용자의 ID (User 모델의 id와 연결)
+  invitedBy   User      @relation("SentInvitations", fields: [invitedById], references: [id])
+
+  @@index([email])
+  @@index([workspaceId])
+  @@index([token])
+}

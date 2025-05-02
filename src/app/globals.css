@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+html {
+  font-size: 16px; /* 반응형 타이포그래피의 기준점 */
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  font-family: Inter, sans-serif; /* 프로젝트 폰트 */
+  line-height: 1.5;
+  /* 기타 기본 스타일 */
+}
+
+@layer base {
+  body {
+    @apply transition-colors duration-200;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-gray-900 font-bold;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply bg-white text-gray-900 border-gray-300 focus:ring-blue-500 focus:border-blue-500;
+  }
+
+  label {
+    @apply text-gray-700;
+  }
+}
