@@ -1,8 +1,7 @@
 // prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
-import { withAccelerate } from '@prisma/extension-accelerate';
 
-const prisma = new PrismaClient().$extends(withAccelerate());
+const prisma = new PrismaClient();
 
 async function main() {
   // 기존 데이터 삭제 (개발 환경에서만 사용)
