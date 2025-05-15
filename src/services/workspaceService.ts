@@ -212,3 +212,104 @@ export async function getWorkspaceById(
     throw new ApiError('워크스페이스 정보 조회 중 오류가 발생했습니다.');
   }
 }
+
+/**
+ * 워크스페이스 이름을 변경합니다.
+ * @param userId 현재 사용자 ID
+ * @param workspaceId 변경할 워크스페이스 ID
+ * @param newName 새로운 워크스페이스 이름
+ * @returns 업데이트된 Workspace 객체
+ */
+export async function updateWorkspace(
+  userId: string,
+  workspaceId: string,
+  newName: string
+): Promise<Workspace> {
+  if (!userId || !workspaceId) {
+    throw new ValidationError('사용자 ID와 워크스페이스 ID는 필수입니다.');
+  }
+  if (!newName || newName.trim() === '') {
+    throw new ValidationError('새 워크스페이스 이름은 필수입니다.');
+  }
+
+  try {
+    const workspaceUser = await prisma.workspaceUser.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId,
+        },
+      },
+      include: {
+        workspace: true, // ownerId를 확인하기 위해 workspace 정보 포함
+      },
+    });
+
+    if (!workspaceUser) {
+      throw new ForbiddenError('해당 워크스페이스에 접근 권한이 없습니다.');
+    }
+
+    // 워크스페이스 소유주 또는 ADMIN만 이름 변경 가능
+    if (workspaceUser.workspace.ownerId !== userId && workspaceUser.role !== 'ADMIN') {
+      throw new ForbiddenError('워크스페이스 이름을 변경할 권한이 없습니다.');
+    }
+
+    const updatedWorkspace = await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { name: newName },
+    });
+
+    return updatedWorkspace;
+  } catch (error) {
+    if (error instanceof ForbiddenError || error instanceof ValidationError) {
+      throw error;
+    }
+    console.error('[WorkspaceService] updateWorkspace error:', error);
+    throw new ApiError('워크스페이스 이름 변경 중 오류가 발생했습니다.');
+  }
+}
+
+/**
+ * 워크스페이스를 삭제합니다.
+ * @param userId 현재 사용자 ID
+ * @param workspaceId 삭제할 워크스페이스 ID
+ * @returns Promise<void>
+ */
+export async function deleteWorkspace(userId: string, workspaceId: string): Promise<void> {
+  if (!userId || !workspaceId) {
+    throw new ValidationError('사용자 ID와 워크스페이스 ID는 필수입니다.');
+  }
+
+  try {
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+    });
+
+    if (!workspace) {
+      // 워크스페이스가 존재하지 않는 경우, 이미 삭제되었거나 잘못된 ID일 수 있으므로
+      // NotFoundError보다는 일반적인 메시지나 성공으로 처리할 수도 있습니다.
+      // 여기서는 일단 찾을 수 없는 경우로 처리합니다.
+      throw new ApiError('삭제할 워크스페이스를 찾을 수 없습니다.', 404);
+    }
+
+    // 워크스페이스 소유주만 삭제 가능
+    if (workspace.ownerId !== userId) {
+      throw new ForbiddenError('워크스페이스를 삭제할 권한이 없습니다.');
+    }
+
+    // Prisma 스키마에서 onDelete: Cascade 설정으로 관련 데이터 자동 삭제됨
+    await prisma.workspace.delete({
+      where: { id: workspaceId },
+    });
+  } catch (error) {
+    if (
+      error instanceof ForbiddenError ||
+      error instanceof ValidationError ||
+      error instanceof ApiError
+    ) {
+      throw error;
+    }
+    console.error('[WorkspaceService] deleteWorkspace error:', error);
+    throw new ApiError('워크스페이스 삭제 중 오류가 발생했습니다.');
+  }
+}
