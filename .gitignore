@@ -8,4 +8,5 @@ node_modules
 build
 
 prisma/dev*
+prisma/prod*
 prisma/migrations
