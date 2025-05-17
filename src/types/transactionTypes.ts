@@ -1,7 +1,7 @@
 /* ./src/types/transactionTypes.ts */
 // 거래(Transaction)와 관련된 타입을 정의합니다.
-import type { Category } from "./categoryTypes";
-import type { CardIssuer } from "./commonTypes";
+import type { Category } from './categoryTypes';
+import type { CardIssuer } from './commonTypes';
 
 /**
  * 개별 거래 내역 데이터 구조
@@ -11,7 +11,7 @@ export interface TransactionData {
   id: number;
   date: string; // ISO 8601 형식의 날짜 문자열 (예: "2023-10-26")
   amount: number;
-  type: "income" | "expense";
+  type: 'income' | 'expense';
   description: string; // 빈 문자열일 수 있음
   categoryId: number;
   category: Category; // 연결된 카테고리 정보
@@ -34,7 +34,7 @@ export interface TransactionData {
 export interface CreateTransactionPayload {
   date: string;
   amount: number; // 일반 거래 시 실제 금액, 할부 원거래 시 총 할부 금액
-  type: "income" | "expense";
+  type: 'income' | 'expense';
   description?: string;
   categoryId: number;
   isInstallment?: boolean;
@@ -61,15 +61,15 @@ export type UpdateTransactionPayload = Partial<CreateTransactionPayload> & {
  * Zod 스키마 (GetTransactionsQuerySchema)와 동기화됩니다.
  */
 export interface GetTransactionsQuery {
-  type?: "income" | "expense";
+  type?: 'income' | 'expense';
   startDate?: string;
   endDate?: string;
   categoryId?: number;
   keyword?: string;
   minAmount?: number;
   maxAmount?: number;
-  sortBy?: "date" | "amount" | "category.name" | "isInstallment";
-  sortOrder?: "asc" | "desc";
+  sortBy?: 'date' | 'amount' | 'category.name' | 'isInstallment';
+  sortOrder?: 'asc' | 'desc';
   isInstallment?: boolean; // true: 할부만, false: 일반만, undefined: 전체
   originalTransactionId?: number; // 특정 원거래에 연결된 개별 할부금만 조회
   // 페이징 관련 필드 추가 가능
@@ -82,8 +82,6 @@ export interface GetTransactionsQuery {
  * 페이징 정보와 함께 실제 거래 내역 배열을 포함합니다.
  */
 export interface TransactionResponse {
-  currentPage: number;
   totalCount: number;
-  totalPages: number;
   transactions: TransactionData[];
 }

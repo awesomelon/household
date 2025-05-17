@@ -65,6 +65,8 @@ import { useRouter } from 'next/navigation';
 import TextField from '@/components/ui/TextField';
 import Alert from '@/components/ui/Alert';
 import Link from 'next/link'; // Next.js Link 컴포넌트 import
+import DailyTransactionCalendar from '@/components/dashboard/DailyTransactionCalendar';
+import { DailyAggregatedCategoryData } from '@/types/calendarTypes';
 
 interface CreateWorkspacePayload {
   name: string;
@@ -148,6 +150,21 @@ export default function DashboardRedesignPage() {
   const currentWorkspace = useMemo(() => {
     return storedWorkspaces.find((ws) => ws.id === activeWorkspaceId);
   }, [activeWorkspaceId, storedWorkspaces]);
+
+  const [currentYear, currentMonthIndex] = useMemo(() => {
+    const dateObj = parseISO(`${selectedMonth}-01`);
+    return [dateObj.getFullYear(), dateObj.getMonth()]; // getMonth()는 0-11 반환
+  }, [selectedMonth]);
+
+  const handleCalendarDateClick = (
+    date: Date,
+    dataForDate: DailyAggregatedCategoryData | undefined
+  ) => {
+    console.log('Calendar date clicked:', format(date, 'yyyy-MM-dd'));
+    if (dataForDate) {
+      console.log('Data for this date:', dataForDate);
+    }
+  };
 
   // 워크스페이스 목록 가져오기
   useEffect(() => {
@@ -731,6 +748,44 @@ export default function DashboardRedesignPage() {
           </div>
         </section>
 
+        <section className='my-6 sm:my-8'>
+          <h2 className='text-xl font-semibold text-gray-700 mb-4 px-1'>
+            일별 거래 달력 (카테고리별)
+          </h2>
+          {transactionsIsLoading ? ( // <<-- transactions 로딩 상태 사용
+            <Card className='h-[500px]'>
+              <div className='flex items-center justify-center h-full'>
+                <LoadingSpinner size='lg' />
+                <p className='ml-2'>달력 및 거래내역 로딩 중...</p>
+              </div>
+            </Card>
+          ) : dashboardDataError ? ( // dashboardDataError는 transactionsError 등을 포함할 수 있음
+            <Card>
+              <Alert type='error'>
+                거래 내역을 불러오는데 실패했습니다:{' '}
+                {dashboardDataError.message || '알 수 없는 오류'}
+              </Alert>
+            </Card>
+          ) : transactions && transactions.length > 0 ? ( // transactions 데이터 직접 사용
+            <DailyTransactionCalendar
+              year={currentYear}
+              month={currentMonthIndex}
+              transactions={transactions} // <<-- 전체 거래 내역 전달
+              onDateClick={handleCalendarDateClick}
+            />
+          ) : (
+            <Card>
+              <div className='text-center py-8'>
+                <InformationCircleIcon className='h-12 w-12 mx-auto text-gray-400 mb-2' />
+                <p className='text-gray-500'>해당 월의 거래 내역이 없습니다.</p>
+                <Button onClick={handleAddTransactionClick} variant='primary' className='mt-4'>
+                  첫 내역 추가하기
+                </Button>
+              </div>
+            </Card>
+          )}
+        </section>
+
         <section className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 sm:mb-8'>
           <ErrorBoundary
             fallback={
@@ -864,7 +919,7 @@ export default function DashboardRedesignPage() {
           </ErrorBoundary>
         </section>
 
-        <section>
+        {/* <section>
           <ErrorBoundary
             fallback={
               <Card title='최근 거래 내역'>
@@ -896,7 +951,7 @@ export default function DashboardRedesignPage() {
               )}
             </Card>
           </ErrorBoundary>
-        </section>
+        </section> */}
 
         {showTransactionForm && (
           <div className='fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out'>

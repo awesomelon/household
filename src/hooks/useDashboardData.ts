@@ -1,29 +1,29 @@
-import useSWR from "swr";
-import { fetcher } from "@/lib/fetchers"; // 에러 처리가 포함된 fetcher 사용
-import type { KpiData } from "@/types/kpiTypes";
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetchers'; // 에러 처리가 포함된 fetcher 사용
+import type { KpiData } from '@/types/kpiTypes';
 import type {
   MonthlyStatsData,
   CategoryStatsData,
   SpendingPatternStats, // 타입 경로 수정 가능성 있음
   IncomeSourceStats, // 타입 경로 수정 가능성 있음
   BudgetVsActualStats, // 타입 경로 수정 가능성 있음
-} from "@/types/statisticsTypes"; // 구체적인 통계 타입 사용
-import type { TransactionResponse } from "@/types/transactionTypes";
-import type { CategoryOption } from "@/types/categoryTypes";
-import type { TrendChartItemData } from "@/types/chartTypes"; // TrendChartItemData 타입 사용
+} from '@/types/statisticsTypes'; // 구체적인 통계 타입 사용
+import type { TransactionResponse } from '@/types/transactionTypes';
+import type { CategoryOption } from '@/types/categoryTypes';
+import type { TrendChartItemData } from '@/types/chartTypes'; // TrendChartItemData 타입 사용
 import {
   STATS_ENDPOINT,
   TRANSACTIONS_ENDPOINT,
   CATEGORIES_ENDPOINT,
   INSIGHTS_ENDPOINT,
-} from "@/constants/apiEndpoints"; // API 엔드포인트 상수 사용
-import { InsightsApiResponse } from "@/types/insightTypes";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+} from '@/constants/apiEndpoints'; // API 엔드포인트 상수 사용
+import { InsightsApiResponse } from '@/types/insightTypes';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 
 // Trend API 응답 타입 (예시, 실제 API 응답 구조에 맞게 정의 필요)
 // statisticsService.getTrendStats의 반환 타입과 일치해야 함
 export interface TrendApiResponse {
-  period: "day" | "month" | "year";
+  period: 'day' | 'month' | 'year';
   month?: string; // period 'day'
   year?: string; // period 'month'
   startYear?: string; // period 'year'
@@ -71,54 +71,40 @@ export const getMonthlyStatsSWRKey = (
 export const getCategoryStatsSWRKey = (
   workspaceId: string,
   selectedMonth: string,
-  period: "month" | "year" = "month"
+  period: 'month' | 'year' = 'month'
 ) =>
   workspaceId
     ? `${STATS_ENDPOINT(workspaceId)}?type=category&${
-        period === "month"
-          ? `month=${selectedMonth}`
-          : `year=${selectedMonth.substring(0, 4)}`
+        period === 'month' ? `month=${selectedMonth}` : `year=${selectedMonth.substring(0, 4)}`
       }&period=${period}`
     : null;
 
 export const getTransactionsSWRKey = (
   workspaceId: string,
-  filters: UseDashboardDataProps["appliedFilters"]
+  filters: UseDashboardDataProps['appliedFilters']
 ) => {
   if (!workspaceId) return null;
   const params = new URLSearchParams({
     startDate: filters.startDate,
     endDate: filters.endDate,
-    sortBy: "date",
-    sortOrder: "desc",
+    sortBy: 'date',
+    sortOrder: 'desc',
   });
-  if (filters.type) params.append("type", filters.type);
-  if (filters.categoryId) params.append("categoryId", filters.categoryId);
+  if (filters.type) params.append('type', filters.type);
+  if (filters.categoryId) params.append('categoryId', filters.categoryId);
   return `${TRANSACTIONS_ENDPOINT(workspaceId)}?${params.toString()}`;
 };
 
 export const getCategoryOptionsSWRKey = (workspaceId: string) =>
   workspaceId ? CATEGORIES_ENDPOINT(workspaceId) : null;
 
-export const getTrendDataSWRKey = (
-  workspaceId: string,
-  selectedMonth: string
-) =>
+export const getTrendDataSWRKey = (workspaceId: string, selectedMonth: string) =>
   workspaceId
-    ? `${STATS_ENDPOINT(
-        workspaceId
-      )}?type=trend&period=day&month=${selectedMonth}`
+    ? `${STATS_ENDPOINT(workspaceId)}?type=trend&period=day&month=${selectedMonth}`
     : null;
 
-export const getSpendingPatternSWRKey = (
-  workspaceId: string,
-  selectedMonth: string
-) =>
-  workspaceId
-    ? `${STATS_ENDPOINT(
-        workspaceId
-      )}?type=spendingPattern&month=${selectedMonth}`
-    : null;
+export const getSpendingPatternSWRKey = (workspaceId: string, selectedMonth: string) =>
+  workspaceId ? `${STATS_ENDPOINT(workspaceId)}?type=spendingPattern&month=${selectedMonth}` : null;
 
 export const getIncomeSourceSWRKey = (
   workspaceId: string,
@@ -131,20 +117,11 @@ export const getIncomeSourceSWRKey = (
       )}?type=incomeSource&month=${selectedMonth}&compare=${compareWithPrevious}`
     : null;
 
-export const getBudgetVsActualSWRKey = (
-  workspaceId: string,
-  selectedMonth: string
-) =>
-  workspaceId
-    ? `${STATS_ENDPOINT(
-        workspaceId
-      )}?type=budgetVsActual&month=${selectedMonth}`
-    : null;
+export const getBudgetVsActualSWRKey = (workspaceId: string, selectedMonth: string) =>
+  workspaceId ? `${STATS_ENDPOINT(workspaceId)}?type=budgetVsActual&month=${selectedMonth}` : null;
 
 export const getInsightsSWRKey = (workspaceId: string, selectedMonth: string) =>
-  workspaceId
-    ? `${INSIGHTS_ENDPOINT(workspaceId)}?month=${selectedMonth}`
-    : null;
+  workspaceId ? `${INSIGHTS_ENDPOINT(workspaceId)}?month=${selectedMonth}` : null;
 
 export function useDashboardData({
   selectedMonth,
@@ -161,9 +138,7 @@ export function useDashboardData({
     isLoading: kpiIsLoading,
     mutate: mutateKpiData,
   } = useSWR<KpiData>(
-    activeWorkspaceId
-      ? getKpiSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious)
-      : null,
+    activeWorkspaceId ? getKpiSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious) : null,
     fetcher
   );
 
@@ -175,11 +150,7 @@ export function useDashboardData({
     mutate: mutateMonthlyStats,
   } = useSWR<MonthlyStatsData>(
     activeWorkspaceId
-      ? getMonthlyStatsSWRKey(
-          activeWorkspaceId,
-          selectedMonth,
-          compareWithPrevious
-        )
+      ? getMonthlyStatsSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious)
       : null,
     fetcher
   );
@@ -191,9 +162,7 @@ export function useDashboardData({
     isLoading: categoryStatsIsLoading,
     mutate: mutateCategoryStats,
   } = useSWR<CategoryStatsData>(
-    activeWorkspaceId
-      ? getCategoryStatsSWRKey(activeWorkspaceId, selectedMonth, "month")
-      : null,
+    activeWorkspaceId ? getCategoryStatsSWRKey(activeWorkspaceId, selectedMonth, 'month') : null,
     fetcher
   );
 
@@ -204,9 +173,7 @@ export function useDashboardData({
     isLoading: trendStatsIsLoading,
     mutate: mutateTrendStatsData,
   } = useSWR<TrendApiResponse>(
-    activeWorkspaceId
-      ? getTrendDataSWRKey(activeWorkspaceId, selectedMonth)
-      : null,
+    activeWorkspaceId ? getTrendDataSWRKey(activeWorkspaceId, selectedMonth) : null,
     fetcher
   );
 
@@ -217,9 +184,7 @@ export function useDashboardData({
     isLoading: transactionsIsLoading,
     mutate: mutateTransactions,
   } = useSWR<TransactionResponse>(
-    activeWorkspaceId
-      ? getTransactionsSWRKey(activeWorkspaceId, appliedFilters)
-      : null,
+    activeWorkspaceId ? getTransactionsSWRKey(activeWorkspaceId, appliedFilters) : null,
     fetcher
   );
 
@@ -259,11 +224,7 @@ export function useDashboardData({
     mutate: mutateIncomeSource,
   } = useSWR<IncomeSourceStats>(
     includeExtraStats && activeWorkspaceId
-      ? getIncomeSourceSWRKey(
-          activeWorkspaceId,
-          selectedMonth,
-          compareWithPrevious
-        )
+      ? getIncomeSourceSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious)
       : null,
     fetcher
   );
@@ -286,9 +247,7 @@ export function useDashboardData({
     isLoading: insightsIsLoading,
     mutate: mutateInsights,
   } = useSWR<InsightsApiResponse>(
-    activeWorkspaceId
-      ? getInsightsSWRKey(activeWorkspaceId, selectedMonth)
-      : null,
+    activeWorkspaceId ? getInsightsSWRKey(activeWorkspaceId, selectedMonth) : null,
     fetcher
   );
 
@@ -304,9 +263,7 @@ export function useDashboardData({
     insightsIsLoading;
 
   const isAnyExtraStatsLoading = includeExtraStats
-    ? spendingPatternIsLoading ||
-      incomeSourceIsLoading ||
-      budgetVsActualIsLoading
+    ? spendingPatternIsLoading || incomeSourceIsLoading || budgetVsActualIsLoading
     : false;
 
   const combinedError =
@@ -345,8 +302,6 @@ export function useDashboardData({
     trendStatsData,
     transactions: transactionsResponse?.transactions,
     transactionsTotalCount: transactionsResponse?.totalCount,
-    transactionsCurrentPage: transactionsResponse?.currentPage,
-    transactionsTotalPages: transactionsResponse?.totalPages,
     categoryOptions,
 
     // 추가 분석 데이터 (조건부)
