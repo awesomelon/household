@@ -189,6 +189,7 @@ enum InvitationStatus {
   ACCEPTED // 초대 수락됨
   DECLINED // 초대 거절됨
   EXPIRED  // 초대 만료됨
+  CANCELED // 초대 취소됨 (관리자 또는 사용자에 의해)
 }
 
 model Invitation {

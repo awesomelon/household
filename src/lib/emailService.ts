@@ -1,29 +1,47 @@
 import nodemailer from 'nodemailer';
+import { WorkspaceRole } from '@prisma/client';
 
-interface EmailOptions {
+interface MailOptions {
   to: string;
   subject: string;
+  text: string;
   html: string;
 }
 
 // Nodemailer transporter 설정
 // 실제 프로덕션에서는 더 강력한 에러 처리 및 로깅, 설정 검증이 필요합니다.
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
+  host: 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587', 10),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+  secure: parseInt(process.env.SMTP_PORT || '587', 10) === 465, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  // tls: {
+  //   ciphers:'SSLv3' // 간혹 TLS 협상 문제시 필요할 수 있음
+  // }
+});
+
+console.log({
+  host: 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587', 10),
+  secure: parseInt(process.env.SMTP_PORT || '587', 10) === 465, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  // tls: {
+  //   ciphers:'SSLv3' // 간혹 TLS 협상 문제시 필요할 수 있음
+  // }
 });
 
 /**
  * 이메일을 발송합니다.
  * @param mailOptions 이메일 옵션 (to, subject, html 등)
  */
-async function sendEmail(mailOptions: EmailOptions): Promise<void> {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+async function sendMail(mailOptions: MailOptions): Promise<void> {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.error(
       'SMTP 설정이 환경 변수에 올바르게 구성되지 않았습니다. 이메일을 발송할 수 없습니다.'
     );
@@ -34,44 +52,46 @@ async function sendEmail(mailOptions: EmailOptions): Promise<void> {
   }
   try {
     await transporter.sendMail({
-      from: `"My App Name" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`, // 보내는 사람 주소 (환경 변수 또는 고정값)
       ...mailOptions,
+      from: process.env.EMAIL_FROM || 'noreply@gmail.com', // 발신자 주소
     });
-    console.log(`Email sent to ${mailOptions.to}`);
+    console.log('Email sent successfully to:', mailOptions.to);
   } catch (error) {
-    console.error(`Error sending email to ${mailOptions.to}:`, error);
-    // 프로덕션에서는 이 에러를 더 잘 처리해야 합니다 (예: 에러 로깅 서비스).
-    throw new Error('이메일 발송 중 오류가 발생했습니다.');
+    console.error('Error sending email:', error);
+    // 프로덕션에서는 더 견고한 에러 로깅 및 처리 필요
+    throw new Error(`Failed to send email: ${(error as Error).message}`);
   }
 }
 
 /**
  * 멤버 초대 이메일을 발송합니다.
- * @param to 초대받는 사람의 이메일 주소
- * @param invitedBy 초대한 사람의 이름 또는 이메일
+ * @param inviteeEmail 초대받는 사람의 이메일 주소
+ * @param inviterName 초대한 사람의 이름
  * @param workspaceName 워크스페이스 이름
  * @param invitationLink 초대 수락 링크
  * @param role 부여될 역할
  */
 export async function sendInvitationEmail(
-  to: string,
-  invitedBy: string,
+  inviteeEmail: string,
+  inviterName: string,
   workspaceName: string,
   invitationLink: string,
-  role: string // WorkspaceRole 타입을 직접 참조하기보다 string으로 받아 유연성 확보
+  role: WorkspaceRole
 ): Promise<void> {
-  const subject = `[My App Name] ${workspaceName} 워크스페이스로의 초대`;
-  // 간단한 HTML 템플릿 예시입니다. 실제로는 더 정교한 템플릿을 사용하는 것이 좋습니다.
+  const subject = `${inviterName}님이 ${workspaceName} 워크스페이스에 초대합니다.`;
+  const text = `안녕하세요, ${inviteeEmail}님.\n\n${inviterName}님이 당신을 [${workspaceName}] 워크스페이스의 ${role} 역할로 초대했습니다.\n초대를 수락하려면 다음 링크를 클릭하세요: ${invitationLink}\n\n이 링크는 7일 후에 만료됩니다.\n\n이 초대를 요청하지 않으셨다면 이 이메일을 무시하셔도 됩니다.`;
   const html = `
-    <p>안녕하세요!</p>
-    <p>${invitedBy}님이 귀하를 <strong>${workspaceName}</strong> 워크스페이스의 <strong>${role}</strong> 역할로 초대했습니다.</p>
-    <p>아래 링크를 클릭하여 초대를 수락하세요 (링크는 7일간 유효합니다):</p>
-    <p><a href="${invitationLink}">${invitationLink}</a></p>
-    <p>감사합니다.</p>
-    <p>My App Name 팀</p>
+    <p>안녕하세요, ${inviteeEmail}님.</p>
+    <p>${inviterName}님이 당신을 <strong>${workspaceName}</strong> 워크스페이스의 <strong>${role}</strong> 역할로 초대했습니다.</p>
+    <p>초대를 수락하려면 아래 버튼을 클릭하세요:</p>
+    <p><a href="${invitationLink}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;">초대 수락하기</a></p>
+    <p>또는 다음 링크를 브라우저에 복사하여 붙여넣으세요: <a href="${invitationLink}">${invitationLink}</a></p>
+    <p><em>이 링크는 7일 후에 만료됩니다.</em></p>
+    <hr>
+    <p style="font-size: 0.9em; color: #666;">이 초대를 요청하지 않으셨다면 이 이메일을 무시하셔도 됩니다.</p>
   `;
 
-  await sendEmail({ to, subject, html });
+  await sendMail({ to: inviteeEmail, subject, text, html });
 }
 
 // 이메일 서버 연결 상태 확인 (선택 사항)
