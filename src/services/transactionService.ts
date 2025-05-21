@@ -24,10 +24,14 @@ import {
   ForbiddenError,
 } from "./apiError";
 
+import { calculateOneTimeCardPaymentDate } from "@/lib/financeUtils"; // 일시불 카드 결제일 계산 함수 임포트
+
 // DB 함수에 전달하기 위한 페이로드 타입 (workspaceId, createdById 포함)
-interface CreateTransactionDbPayloadInternal extends CreateTransactionPayload {
+interface CreateTransactionDbPayloadInternal
+  extends Omit<CreateTransactionPayload, "useNextMonthForOneTime"> {
   workspaceId: string;
   createdById: string;
+  adjustedDate?: Date; // 일시불 카드 결제일 경우 다음달로 조정된 날짜
 }
 
 /**
@@ -73,11 +77,27 @@ export async function createTransaction(
   // CreateTransactionSchema의 refine 로직에서 기본적인 할부 필드 조합 유효성은 이미 검사되었다고 가정합니다.
 
   try {
+    // 일시불 카드 결제인 경우 다음달 날짜 계산
+    let adjustedDate: Date | undefined = undefined;
+
+    const isOneTimeCardPayment =
+      payload.installmentCardIssuer !== undefined &&
+      (!payload.isInstallment || payload.installmentMonths === 1);
+
+    if (isOneTimeCardPayment && payload.useNextMonthForOneTime) {
+      adjustedDate = calculateOneTimeCardPaymentDate(payload.date);
+    }
+
     const dataForDb: CreateTransactionDbPayloadInternal = {
       ...payload,
       workspaceId,
       createdById: userId, // 거래 생성자는 현재 로그인한 사용자
+      adjustedDate, // 다음달로 조정된 날짜 전달 (undefined이면 원래 날짜 사용)
     };
+
+    // useNextMonthForOneTime 필드 제거 (DB 함수에서는 사용하지 않음)
+    delete (dataForDb as any).useNextMonthForOneTime;
+
     const createdTransaction = await createTransactionDb(dataForDb);
     return createdTransaction as unknown as TransactionData; // 타입 단언
   } catch (error) {
@@ -228,13 +248,36 @@ export async function updateTransaction(
   }
 
   try {
-    // updateTransactionDb 함수는 workspaceId를 내부적으로 사용하지 않으므로,
-    // 위에서 existingTransaction 조회를 통해 이미 해당 워크스페이스의 거래임을 확인했습니다.
-    // 필요하다면 updateTransactionDb 함수 시그니처에 workspaceId를 추가하여 명시적으로 전달할 수 있습니다.
-    const updatedTransaction = await updateTransactionDb(transactionId, {
+    // 일시불 카드 결제인 경우 다음달 날짜 계산
+    let adjustedDate: Date | undefined = undefined;
+
+    if (payload.date) {
+      const isOneTimeCardPayment =
+        (payload.installmentCardIssuer !== undefined ||
+          existingTransaction.installmentCardIssuer) &&
+        ((!payload.isInstallment && !existingTransaction.isInstallment) ||
+          payload.installmentMonths === 1 ||
+          existingTransaction.installmentMonths === 1);
+
+      if (isOneTimeCardPayment && payload.useNextMonthForOneTime) {
+        adjustedDate = calculateOneTimeCardPaymentDate(payload.date);
+      }
+    }
+
+    // DB 함수에 전달할 데이터 준비
+    const dataToSend = {
       ...payload,
       workspaceId,
-    }); // DB 함수에 workspaceId 전달 (db 함수 수정 필요)
+      adjustedDate,
+    };
+
+    // useNextMonthForOneTime 필드 제거 (DB 함수에서는 사용하지 않음)
+    delete (dataToSend as any).useNextMonthForOneTime;
+
+    const updatedTransaction = await updateTransactionDb(
+      transactionId,
+      dataToSend
+    );
     return updatedTransaction as unknown as TransactionData;
   } catch (error) {
     console.error("[TransactionService] updateTransaction error:", error);

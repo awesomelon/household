@@ -1316,32 +1316,32 @@ export const KPI_TITLES = {
 
 ```ts
 /* ./src/hooks/useDashboardData.ts */
-import useSWR from "swr";
-import { fetcher } from "@/lib/fetchers"; // 에러 처리가 포함된 fetcher 사용
-import type { KpiData } from "@/types/kpiTypes";
+import useSWR from 'swr';
+import { fetcher } from '@/lib/fetchers'; // 에러 처리가 포함된 fetcher 사용
+import type { KpiData } from '@/types/kpiTypes';
 import type {
   MonthlyStatsData,
   CategoryStatsData,
   SpendingPatternStats, // 타입 경로 수정 가능성 있음
   IncomeSourceStats, // 타입 경로 수정 가능성 있음
   BudgetVsActualStats, // 타입 경로 수정 가능성 있음
-} from "@/types/statisticsTypes"; // 구체적인 통계 타입 사용
-import type { TransactionResponse } from "@/types/transactionTypes";
-import type { CategoryOption } from "@/types/categoryTypes";
-import type { TrendChartItemData } from "@/types/chartTypes"; // TrendChartItemData 타입 사용
+} from '@/types/statisticsTypes'; // 구체적인 통계 타입 사용
+import type { TransactionResponse } from '@/types/transactionTypes';
+import type { CategoryOption } from '@/types/categoryTypes';
+import type { TrendChartItemData } from '@/types/chartTypes'; // TrendChartItemData 타입 사용
 import {
   STATS_ENDPOINT,
   TRANSACTIONS_ENDPOINT,
   CATEGORIES_ENDPOINT,
   INSIGHTS_ENDPOINT,
-} from "@/constants/apiEndpoints"; // API 엔드포인트 상수 사용
-import { InsightsApiResponse } from "@/types/insightTypes";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
+} from '@/constants/apiEndpoints'; // API 엔드포인트 상수 사용
+import { InsightsApiResponse } from '@/types/insightTypes';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 
 // Trend API 응답 타입 (예시, 실제 API 응답 구조에 맞게 정의 필요)
 // statisticsService.getTrendStats의 반환 타입과 일치해야 함
 export interface TrendApiResponse {
-  period: "day" | "month" | "year";
+  period: 'day' | 'month' | 'year';
   month?: string; // period 'day'
   year?: string; // period 'month'
   startYear?: string; // period 'year'
@@ -1389,54 +1389,40 @@ export const getMonthlyStatsSWRKey = (
 export const getCategoryStatsSWRKey = (
   workspaceId: string,
   selectedMonth: string,
-  period: "month" | "year" = "month"
+  period: 'month' | 'year' = 'month'
 ) =>
   workspaceId
     ? `${STATS_ENDPOINT(workspaceId)}?type=category&${
-        period === "month"
-          ? `month=${selectedMonth}`
-          : `year=${selectedMonth.substring(0, 4)}`
+        period === 'month' ? `month=${selectedMonth}` : `year=${selectedMonth.substring(0, 4)}`
       }&period=${period}`
     : null;
 
 export const getTransactionsSWRKey = (
   workspaceId: string,
-  filters: UseDashboardDataProps["appliedFilters"]
+  filters: UseDashboardDataProps['appliedFilters']
 ) => {
   if (!workspaceId) return null;
   const params = new URLSearchParams({
     startDate: filters.startDate,
     endDate: filters.endDate,
-    sortBy: "date",
-    sortOrder: "desc",
+    sortBy: 'date',
+    sortOrder: 'desc',
   });
-  if (filters.type) params.append("type", filters.type);
-  if (filters.categoryId) params.append("categoryId", filters.categoryId);
+  if (filters.type) params.append('type', filters.type);
+  if (filters.categoryId) params.append('categoryId', filters.categoryId);
   return `${TRANSACTIONS_ENDPOINT(workspaceId)}?${params.toString()}`;
 };
 
 export const getCategoryOptionsSWRKey = (workspaceId: string) =>
   workspaceId ? CATEGORIES_ENDPOINT(workspaceId) : null;
 
-export const getTrendDataSWRKey = (
-  workspaceId: string,
-  selectedMonth: string
-) =>
+export const getTrendDataSWRKey = (workspaceId: string, selectedMonth: string) =>
   workspaceId
-    ? `${STATS_ENDPOINT(
-        workspaceId
-      )}?type=trend&period=day&month=${selectedMonth}`
+    ? `${STATS_ENDPOINT(workspaceId)}?type=trend&period=day&month=${selectedMonth}`
     : null;
 
-export const getSpendingPatternSWRKey = (
-  workspaceId: string,
-  selectedMonth: string
-) =>
-  workspaceId
-    ? `${STATS_ENDPOINT(
-        workspaceId
-      )}?type=spendingPattern&month=${selectedMonth}`
-    : null;
+export const getSpendingPatternSWRKey = (workspaceId: string, selectedMonth: string) =>
+  workspaceId ? `${STATS_ENDPOINT(workspaceId)}?type=spendingPattern&month=${selectedMonth}` : null;
 
 export const getIncomeSourceSWRKey = (
   workspaceId: string,
@@ -1449,20 +1435,11 @@ export const getIncomeSourceSWRKey = (
       )}?type=incomeSource&month=${selectedMonth}&compare=${compareWithPrevious}`
     : null;
 
-export const getBudgetVsActualSWRKey = (
-  workspaceId: string,
-  selectedMonth: string
-) =>
-  workspaceId
-    ? `${STATS_ENDPOINT(
-        workspaceId
-      )}?type=budgetVsActual&month=${selectedMonth}`
-    : null;
+export const getBudgetVsActualSWRKey = (workspaceId: string, selectedMonth: string) =>
+  workspaceId ? `${STATS_ENDPOINT(workspaceId)}?type=budgetVsActual&month=${selectedMonth}` : null;
 
 export const getInsightsSWRKey = (workspaceId: string, selectedMonth: string) =>
-  workspaceId
-    ? `${INSIGHTS_ENDPOINT(workspaceId)}?month=${selectedMonth}`
-    : null;
+  workspaceId ? `${INSIGHTS_ENDPOINT(workspaceId)}?month=${selectedMonth}` : null;
 
 export function useDashboardData({
   selectedMonth,
@@ -1479,9 +1456,7 @@ export function useDashboardData({
     isLoading: kpiIsLoading,
     mutate: mutateKpiData,
   } = useSWR<KpiData>(
-    activeWorkspaceId
-      ? getKpiSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious)
-      : null,
+    activeWorkspaceId ? getKpiSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious) : null,
     fetcher
   );
 
@@ -1493,11 +1468,7 @@ export function useDashboardData({
     mutate: mutateMonthlyStats,
   } = useSWR<MonthlyStatsData>(
     activeWorkspaceId
-      ? getMonthlyStatsSWRKey(
-          activeWorkspaceId,
-          selectedMonth,
-          compareWithPrevious
-        )
+      ? getMonthlyStatsSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious)
       : null,
     fetcher
   );
@@ -1509,9 +1480,7 @@ export function useDashboardData({
     isLoading: categoryStatsIsLoading,
     mutate: mutateCategoryStats,
   } = useSWR<CategoryStatsData>(
-    activeWorkspaceId
-      ? getCategoryStatsSWRKey(activeWorkspaceId, selectedMonth, "month")
-      : null,
+    activeWorkspaceId ? getCategoryStatsSWRKey(activeWorkspaceId, selectedMonth, 'month') : null,
     fetcher
   );
 
@@ -1522,9 +1491,7 @@ export function useDashboardData({
     isLoading: trendStatsIsLoading,
     mutate: mutateTrendStatsData,
   } = useSWR<TrendApiResponse>(
-    activeWorkspaceId
-      ? getTrendDataSWRKey(activeWorkspaceId, selectedMonth)
-      : null,
+    activeWorkspaceId ? getTrendDataSWRKey(activeWorkspaceId, selectedMonth) : null,
     fetcher
   );
 
@@ -1535,9 +1502,7 @@ export function useDashboardData({
     isLoading: transactionsIsLoading,
     mutate: mutateTransactions,
   } = useSWR<TransactionResponse>(
-    activeWorkspaceId
-      ? getTransactionsSWRKey(activeWorkspaceId, appliedFilters)
-      : null,
+    activeWorkspaceId ? getTransactionsSWRKey(activeWorkspaceId, appliedFilters) : null,
     fetcher
   );
 
@@ -1577,11 +1542,7 @@ export function useDashboardData({
     mutate: mutateIncomeSource,
   } = useSWR<IncomeSourceStats>(
     includeExtraStats && activeWorkspaceId
-      ? getIncomeSourceSWRKey(
-          activeWorkspaceId,
-          selectedMonth,
-          compareWithPrevious
-        )
+      ? getIncomeSourceSWRKey(activeWorkspaceId, selectedMonth, compareWithPrevious)
       : null,
     fetcher
   );
@@ -1604,9 +1565,7 @@ export function useDashboardData({
     isLoading: insightsIsLoading,
     mutate: mutateInsights,
   } = useSWR<InsightsApiResponse>(
-    activeWorkspaceId
-      ? getInsightsSWRKey(activeWorkspaceId, selectedMonth)
-      : null,
+    activeWorkspaceId ? getInsightsSWRKey(activeWorkspaceId, selectedMonth) : null,
     fetcher
   );
 
@@ -1622,9 +1581,7 @@ export function useDashboardData({
     insightsIsLoading;
 
   const isAnyExtraStatsLoading = includeExtraStats
-    ? spendingPatternIsLoading ||
-      incomeSourceIsLoading ||
-      budgetVsActualIsLoading
+    ? spendingPatternIsLoading || incomeSourceIsLoading || budgetVsActualIsLoading
     : false;
 
   const combinedError =
@@ -1663,8 +1620,6 @@ export function useDashboardData({
     trendStatsData,
     transactions: transactionsResponse?.transactions,
     transactionsTotalCount: transactionsResponse?.totalCount,
-    transactionsCurrentPage: transactionsResponse?.currentPage,
-    transactionsTotalPages: transactionsResponse?.totalPages,
     categoryOptions,
 
     // 추가 분석 데이터 (조건부)
@@ -2605,24 +2560,24 @@ export async function getCategoryDataInRangeDb(
 ```ts
 /* ./src/lib/db/transactionsDb.ts */
 /* ./src/lib/db/transactionsDb.ts */
-import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import type {
   CreateTransactionPayload,
   UpdateTransactionPayload,
   GetTransactionsQuery,
-} from "@/lib/schemas/transactionsApiSchemas";
-import { calculateEstimatedInstallmentFee } from "@/lib/financeUtils";
+} from '@/lib/schemas/transactionsApiSchemas';
+import { calculateEstimatedInstallmentFee } from '@/lib/financeUtils';
 // 새로 추가된 유틸리티 함수 임포트 (경로는 실제 프로젝트 구조에 맞게 조정)
 import {
   calculateInstallmentAmounts,
   calculateNthInstallmentPaymentDate,
   calculateNthInstallmentFeeOnly,
-} from "@/lib/financeUtils"; // 기졸 financeUtils.ts에 추가 가정
-import { startOfDay } from "date-fns";
+} from '@/lib/financeUtils'; // 기졸 financeUtils.ts에 추가 가정
+import { startOfDay } from 'date-fns';
 
-import type { TransactionData } from "@/types/transactionTypes";
-import { CardIssuer } from "@/types/commonTypes";
+import type { TransactionData } from '@/types/transactionTypes';
+import { CardIssuer } from '@/types/commonTypes';
 
 interface CreateTransactionDbPayload extends CreateTransactionPayload {
   workspaceId: string;
@@ -2655,14 +2610,12 @@ export async function createTransactionDb(data: CreateTransactionDbPayload) {
 
     // 할부 원거래의 경우, 'amount' 필드에 'totalInstallmentAmount'를 사용.
     // 'totalInstallmentAmount'가 없으면 API 요청의 'amount'를 총액으로 간주.
-    const actualTotalInstallmentAmount = isInstallment
-      ? totalInstallmentAmount || amount
-      : amount;
+    const actualTotalInstallmentAmount = isInstallment ? totalInstallmentAmount || amount : amount;
 
     let estimatedFee: number | null = null;
     if (
       isInstallment &&
-      type === "expense" &&
+      type === 'expense' &&
       actualTotalInstallmentAmount &&
       installmentMonths &&
       installmentMonths >= 2
@@ -2672,7 +2625,7 @@ export async function createTransactionDb(data: CreateTransactionDbPayload) {
         installmentMonths,
         purchaseDate,
         installmentCardIssuer,
-        "max"
+        'max'
       );
     }
 
@@ -2687,9 +2640,7 @@ export async function createTransactionDb(data: CreateTransactionDbPayload) {
         isInstallment: isInstallment || false,
         installmentMonths: isInstallment ? installmentMonths : null,
         currentInstallmentNumber: null,
-        totalInstallmentAmount: isInstallment
-          ? actualTotalInstallmentAmount
-          : null,
+        totalInstallmentAmount: isInstallment ? actualTotalInstallmentAmount : null,
         originalTransactionId: null,
         installmentCardIssuer: isInstallment ? installmentCardIssuer : null,
         estimatedInstallmentFee: isInstallment ? estimatedFee : null,
@@ -2701,7 +2652,7 @@ export async function createTransactionDb(data: CreateTransactionDbPayload) {
     // 2. 할부 원거래이고, 지출 타입이며, 할부 조건이 유효한 경우 개별 할부금 레코드 생성
     if (
       isInstallment &&
-      type === "expense" &&
+      type === 'expense' &&
       installmentMonths &&
       installmentMonths > 0 &&
       actualTotalInstallmentAmount &&
@@ -2712,24 +2663,19 @@ export async function createTransactionDb(data: CreateTransactionDbPayload) {
         installmentMonths,
         purchaseDate,
         installmentCardIssuer,
-        "max"
+        'max'
       );
 
       const installmentDataToCreate: Prisma.TransactionCreateManyInput[] = [];
       for (let i = 0; i < installmentMonths; i++) {
-        const paymentDate = calculateNthInstallmentPaymentDate(
-          purchaseDate,
-          i + 1
-        );
+        const paymentDate = calculateNthInstallmentPaymentDate(purchaseDate, i + 1);
         const singleInstallmentAmount = installmentAmounts[i];
 
         installmentDataToCreate.push({
           date: paymentDate,
           amount: singleInstallmentAmount,
           type,
-          description: `${description || "할부"} (${
-            i + 1
-          }/${installmentMonths}회)`,
+          description: `${description || '할부'} (${i + 1}/${installmentMonths}회)`,
           categoryId,
           isInstallment: true,
           installmentMonths,
@@ -2766,10 +2712,7 @@ interface UpdateTransactionDbPayload extends UpdateTransactionPayload {
  * @param data - 수정할 거래 데이터 (UpdateTransactionPayload 타입)
  * @returns 수정된 거래 객체 (원거래 객체)
  */
-export async function updateTransactionDb(
-  id: number,
-  data: UpdateTransactionDbPayload
-) {
+export async function updateTransactionDb(id: number, data: UpdateTransactionDbPayload) {
   const { workspaceId, ...updatePayload } = data;
 
   return prisma.$transaction(async (tx) => {
@@ -2779,23 +2722,15 @@ export async function updateTransactionDb(
     });
 
     if (!existingTransaction) {
-      console.error(
-        `[updateTransactionDb] Transaction not found for ID: ${id}`
-      );
+      console.error(`[updateTransactionDb] Transaction not found for ID: ${id}`);
       throw new Error(`수정할 거래(ID: ${id})를 찾을 수 없습니다.`);
     }
-    console.log(
-      `[updateTransactionDb] Found existing transaction:`,
-      existingTransaction
-    );
+    console.log(`[updateTransactionDb] Found existing transaction:`, existingTransaction);
 
     // 2. 이 거래가 '할부 원거래'였는지 확인
     const wasOriginalInstallment =
-      existingTransaction.isInstallment &&
-      !existingTransaction.originalTransactionId;
-    console.log(
-      `[updateTransactionDb] Was original installment? ${wasOriginalInstallment}`
-    ); // <<-- 로그 추가 (3)
+      existingTransaction.isInstallment && !existingTransaction.originalTransactionId;
+    console.log(`[updateTransactionDb] Was original installment? ${wasOriginalInstallment}`); // <<-- 로그 추가 (3)
 
     // 3. '할부 원거래'였다면, 연결된 기존 개별 할부금 레코드들을 먼저 삭제
     if (wasOriginalInstallment) {
@@ -2806,19 +2741,15 @@ export async function updateTransactionDb(
         // deleteResult 변수 추가
         where: { originalTransactionId: id, workspaceId },
       });
-      console.log(
-        `[updateTransactionDb] Deleted ${deleteResult.count} child installments.`
-      ); // <<-- 로그 추가 (4) - 삭제된 개수 확인
+      console.log(`[updateTransactionDb] Deleted ${deleteResult.count} child installments.`); // <<-- 로그 추가 (4) - 삭제된 개수 확인
     }
 
     // 4. 업데이트 데이터 준비 (기존 로직과 동일)
     const updateDataForTarget: Prisma.TransactionUpdateInput = {};
 
-    if (updatePayload.date)
-      updateDataForTarget.date = new Date(updatePayload.date);
+    if (updatePayload.date) updateDataForTarget.date = new Date(updatePayload.date);
     if (updatePayload.type) updateDataForTarget.type = updatePayload.type;
-    if (updatePayload.description !== undefined)
-      updateDataForTarget.description = data.description;
+    if (updatePayload.description !== undefined) updateDataForTarget.description = data.description;
 
     if (updatePayload.categoryId !== undefined) {
       updateDataForTarget.category = {
@@ -2882,30 +2813,26 @@ export async function updateTransactionDb(
         // 명시적으로 payload에 해당 필드가 있을 때만 업데이트하도록 처리해야 합니다.
         // 현재 TransactionEditModal은 설명만 보내므로, 아래는 기존 값을 유지하는 방향입니다.
         updateDataForTarget.amount =
-          updatePayload.amount !== undefined
-            ? updatePayload.amount
-            : existingTransaction.amount; // 기존 회차 금액 유지
+          updatePayload.amount !== undefined ? updatePayload.amount : existingTransaction.amount; // 기존 회차 금액 유지
         updateDataForTarget.currentInstallmentNumber =
           updatePayload.currentInstallmentNumber !== undefined
             ? updatePayload.currentInstallmentNumber
             : existingTransaction.currentInstallmentNumber; // 기존 회차 정보 유지
-        updateDataForTarget.originalTransactionId =
-          existingTransaction.originalTransactionId; // 기존 원거래 ID 유지
+        updateDataForTarget.originalTransactionId = existingTransaction.originalTransactionId; // 기존 원거래 ID 유지
 
         // 개별 할부금 수정 시에는 estimatedInstallmentFee를 원거래 기준으로 재계산하지 않거나, null로 설정합니다.
-        updateDataForTarget.estimatedInstallmentFee =
-          existingTransaction.estimatedInstallmentFee; // 또는 null
+        updateDataForTarget.estimatedInstallmentFee = existingTransaction.estimatedInstallmentFee; // 또는 null
       } else {
         // --- 할부 원거래를 생성 또는 수정하는 경우 ---
-        if ((updatePayload.type || existingTransaction.type) === "income") {
-          throw new Error("수입 거래는 할부로 설정할 수 없습니다.");
+        if ((updatePayload.type || existingTransaction.type) === 'income') {
+          throw new Error('수입 거래는 할부로 설정할 수 없습니다.');
         }
         // installmentMonths, totalInstallmentAmount, installmentCardIssuer 유효성 검사는 스키마 및 API 핸들러에서 처리됨을 가정합니다.
         if (!newInstallmentMonths || newInstallmentMonths < 2) {
-          throw new Error("할부 개월수는 2개월 이상이어야 합니다.");
+          throw new Error('할부 개월수는 2개월 이상이어야 합니다.');
         }
         if (!newTotalInstallmentAmount || newTotalInstallmentAmount <= 0) {
-          throw new Error("총 할부 금액은 0보다 커야 합니다.");
+          throw new Error('총 할부 금액은 0보다 커야 합니다.');
         }
         // 카드사 정보는 newInstallmentCardIssuer를 사용 (payload에 없으면 existingTransaction 값)
 
@@ -2922,14 +2849,13 @@ export async function updateTransactionDb(
           ? new Date(updatePayload.date)
           : existingTransaction.date;
 
-        updateDataForTarget.estimatedInstallmentFee =
-          calculateEstimatedInstallmentFee(
-            newTotalInstallmentAmount!,
-            newInstallmentMonths!,
-            effectivePurchaseDateForFee,
-            newInstallmentCardIssuer,
-            "max"
-          );
+        updateDataForTarget.estimatedInstallmentFee = calculateEstimatedInstallmentFee(
+          newTotalInstallmentAmount!,
+          newInstallmentMonths!,
+          effectivePurchaseDateForFee,
+          newInstallmentCardIssuer,
+          'max'
+        );
         // 이 경우, 연결된 기존 개별 할부금 삭제 및 재생성 로직(shouldRegenerateChildren)이 뒤따릅니다.
       }
     } else {
@@ -2946,27 +2872,23 @@ export async function updateTransactionDb(
       } else if (!newIsInstallment && existingTransaction.isInstallment) {
         // 할부에서 일반으로 변경 시 amount 처리 (기존 총액 사용 또는 에러 필요)
         updateDataForTarget.amount =
-          existingTransaction.totalInstallmentAmount ||
-          existingTransaction.amount;
+          existingTransaction.totalInstallmentAmount || existingTransaction.amount;
       }
     }
 
-    console.log(
-      `[updateTransactionDb] Prepared update data for ID ${id}:`,
-      updateDataForTarget
-    ); // <<-- 로그 추가 (5)
+    console.log(`[updateTransactionDb] Prepared update data for ID ${id}:`, updateDataForTarget); // <<-- 로그 추가 (5)
 
     // 5. 전달된 ID의 레코드 업데이트 실행
     const updatedTransaction = await tx.transaction.update({
       where: { id },
       data: updateDataForTarget,
     });
-    console.log("Updated transaction (ID:%s):", id, updatedTransaction);
+    console.log('Updated transaction (ID:%s):', id, updatedTransaction);
 
     // 6. 새로운 조건으로 개별 할부금 레코드 재생성 (조건 수정됨)
     const shouldRegenerateChildren =
       updatedTransaction.isInstallment &&
-      updatedTransaction.type === "expense" &&
+      updatedTransaction.type === 'expense' &&
       updatedTransaction.installmentMonths &&
       updatedTransaction.installmentMonths > 0 &&
       updatedTransaction.totalInstallmentAmount &&
@@ -2974,10 +2896,7 @@ export async function updateTransactionDb(
       !updatedTransaction.originalTransactionId; // <<-- 핵심 조건!
 
     if (shouldRegenerateChildren) {
-      console.log(
-        "Regenerating child installments for original ID:",
-        updatedTransaction.id
-      );
+      console.log('Regenerating child installments for original ID:', updatedTransaction.id);
       const basePurchaseDateForRegeneration = updatedTransaction.date;
 
       const installmentAmounts = calculateInstallmentAmounts(
@@ -2985,15 +2904,11 @@ export async function updateTransactionDb(
         updatedTransaction.installmentMonths as number,
         basePurchaseDateForRegeneration,
         updatedTransaction.installmentCardIssuer,
-        "max"
+        'max'
       );
 
       const installmentDataToCreate: Prisma.TransactionCreateManyInput[] = [];
-      for (
-        let i = 0;
-        i < (updatedTransaction.installmentMonths as number);
-        i++
-      ) {
+      for (let i = 0; i < (updatedTransaction.installmentMonths as number); i++) {
         const paymentDate = calculateNthInstallmentPaymentDate(
           basePurchaseDateForRegeneration,
           i + 1
@@ -3004,15 +2919,14 @@ export async function updateTransactionDb(
           date: paymentDate,
           amount: singleInstallmentAmount,
           type: updatedTransaction.type,
-          description: `${updatedTransaction.description || "할부"} (${i + 1}/${
+          description: `${updatedTransaction.description || '할부'} (${i + 1}/${
             updatedTransaction.installmentMonths
           }회)`,
           categoryId: updatedTransaction.categoryId,
           isInstallment: true,
           installmentMonths: updatedTransaction.installmentMonths as number,
           currentInstallmentNumber: i + 1,
-          totalInstallmentAmount:
-            updatedTransaction.totalInstallmentAmount as number,
+          totalInstallmentAmount: updatedTransaction.totalInstallmentAmount as number,
           originalTransactionId: updatedTransaction.id,
           installmentCardIssuer: updatedTransaction.installmentCardIssuer,
           estimatedInstallmentFee: null,
@@ -3056,19 +2970,11 @@ export async function deleteTransactionDb(id: number, workspaceId: string) {
       },
     });
 
-    if (
-      !transactionToDelete ||
-      transactionToDelete.workspaceId !== workspaceId
-    ) {
-      throw new Error(
-        `삭제할 거래(ID: ${id})를 찾을 수 없거나 권한이 없습니다.`
-      );
+    if (!transactionToDelete || transactionToDelete.workspaceId !== workspaceId) {
+      throw new Error(`삭제할 거래(ID: ${id})를 찾을 수 없거나 권한이 없습니다.`);
     }
 
-    if (
-      transactionToDelete.isInstallment &&
-      !transactionToDelete.originalTransactionId
-    ) {
+    if (transactionToDelete.isInstallment && !transactionToDelete.originalTransactionId) {
       await tx.transaction.deleteMany({
         where: { originalTransactionId: id, workspaceId }, // workspaceId 조건 추가
       });
@@ -3084,8 +2990,6 @@ export async function deleteTransactionDb(id: number, workspaceId: string) {
 
 interface GetTransactionsDbQuery extends GetTransactionsQuery {
   workspaceId: string;
-  page?: number;
-  pageSize?: number;
 }
 
 export async function getTransactionsDb(query: GetTransactionsDbQuery) {
@@ -3098,12 +3002,10 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
     keyword,
     minAmount,
     maxAmount,
-    sortBy = "date",
-    sortOrder = "desc",
+    sortBy = 'date',
+    sortOrder = 'desc',
     isInstallment,
     originalTransactionId,
-    page = 1,
-    pageSize = 10,
   } = query;
 
   const filter: Prisma.TransactionWhereInput = {
@@ -3126,32 +3028,26 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
   }
 
   if (minAmount !== undefined) {
-    if (!filter.amount || typeof filter.amount !== "object") {
+    if (!filter.amount || typeof filter.amount !== 'object') {
       filter.amount = {};
     }
     (filter.amount as Prisma.FloatFilter).gte = minAmount;
   }
   if (maxAmount !== undefined) {
-    if (!filter.amount || typeof filter.amount !== "object") {
+    if (!filter.amount || typeof filter.amount !== 'object') {
       filter.amount = {};
     }
     (filter.amount as Prisma.FloatFilter).lte = maxAmount;
   }
 
   if (isInstallment !== undefined) filter.isInstallment = isInstallment;
-  if (originalTransactionId !== undefined)
-    filter.originalTransactionId = originalTransactionId;
-
-  const skip = (page - 1) * pageSize;
-  const take = pageSize;
+  if (originalTransactionId !== undefined) filter.originalTransactionId = originalTransactionId;
 
   const prismaTransactions = await prisma.transaction.findMany({
     where: filter,
     orderBy: {
       [sortBy]: sortOrder,
     },
-    skip,
-    take,
     include: {
       category: true,
     },
@@ -3178,9 +3074,7 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
     }
   >();
   if (originalTransactionIds.length > 0) {
-    const uniqueOriginalTransactionIds = Array.from(
-      new Set(originalTransactionIds)
-    );
+    const uniqueOriginalTransactionIds = Array.from(new Set(originalTransactionIds));
     const fetchedOriginalTransactions = await prisma.transaction.findMany({
       where: {
         id: { in: uniqueOriginalTransactionIds },
@@ -3219,14 +3113,8 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
     const isChildInstallment = tx.isInstallment && tx.originalTransactionId;
 
     let monthlyFee: number | null = null;
-    if (
-      isChildInstallment &&
-      tx.originalTransactionId &&
-      tx.currentInstallmentNumber
-    ) {
-      const originalTxData = originalTransactionsMap.get(
-        tx.originalTransactionId
-      );
+    if (isChildInstallment && tx.originalTransactionId && tx.currentInstallmentNumber) {
+      const originalTxData = originalTransactionsMap.get(tx.originalTransactionId);
       if (
         originalTxData &&
         originalTxData.totalInstallmentAmount &&
@@ -3239,7 +3127,7 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
           tx.currentInstallmentNumber,
           originalTxData.date,
           originalTxData.installmentCardIssuer,
-          "max"
+          'max'
         );
       }
     }
@@ -3248,20 +3136,20 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
       ? {
           id: tx.category.id,
           name: tx.category.name,
-          type: tx.category.type as "income" | "expense",
+          type: tx.category.type as 'income' | 'expense',
         }
       : {
           id: tx.categoryId,
-          name: "미분류",
-          type: "expense" as "income" | "expense",
+          name: '미분류',
+          type: 'expense' as 'income' | 'expense',
         };
 
     return {
       id: tx.id,
       date: tx.date.toISOString(),
       amount: tx.amount,
-      type: tx.type as "income" | "expense",
-      description: tx.description || "",
+      type: tx.type as 'income' | 'expense',
+      description: tx.description || '',
       categoryId: categoryData.id,
       category: categoryData,
       isInstallment: tx.isInstallment,
@@ -3270,9 +3158,7 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
       totalInstallmentAmount: tx.totalInstallmentAmount,
       originalTransactionId: tx.originalTransactionId,
       installmentCardIssuer: tx.installmentCardIssuer as CardIssuer,
-      estimatedInstallmentFee: isOriginalInstallment
-        ? tx.estimatedInstallmentFee
-        : null,
+      estimatedInstallmentFee: isOriginalInstallment ? tx.estimatedInstallmentFee : null,
       monthlyInstallmentFee: monthlyFee,
     };
   });
@@ -3280,8 +3166,6 @@ export async function getTransactionsDb(query: GetTransactionsDbQuery) {
   return {
     transactions,
     totalCount,
-    totalPages: Math.ceil(totalCount / pageSize),
-    currentPage: page,
   };
 }
 
@@ -4929,17 +4813,14 @@ export async function createCategory(
 ```ts
 /* ./src/services/insightGenerationService.ts */
 // src/services/InsightGenerationService.ts
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import {
   getMonthlyStatsService,
   getBudgetVsActualStatsService,
-} from "@/services/statisticsService";
-import { getTransactions } from "@/services/transactionService";
-import type {
-  MonthlyStatsData,
-  BudgetVsActualStats,
-} from "@/types/statisticsTypes";
-import type { TransactionData } from "@/types/transactionTypes";
+} from '@/services/statisticsService';
+import { getTransactions } from '@/services/transactionService';
+import type { MonthlyStatsData, BudgetVsActualStats } from '@/types/statisticsTypes';
+import type { TransactionData } from '@/types/transactionTypes';
 import {
   format,
   subDays,
@@ -4949,16 +4830,14 @@ import {
   parseISO,
   differenceInDays,
   getDate,
-} from "date-fns";
-import { v4 as uuidv4 } from "uuid"; // 고유 ID 생성을 위해 uuid 추가
-import { ForbiddenError } from "./apiError";
-import type { GetTransactionsQuery } from "@/lib/schemas/transactionsApiSchemas"; // 추가
+} from 'date-fns';
+import { v4 as uuidv4 } from 'uuid'; // 고유 ID 생성을 위해 uuid 추가
+import { ForbiddenError } from './apiError';
+import type { GetTransactionsQuery } from '@/lib/schemas/transactionsApiSchemas'; // 추가
 
 // Define the response type for getTransactions based on provided structure
 interface TransactionResponse {
-  currentPage: number;
   totalCount: number;
-  totalPages: number;
   transactions: TransactionData[];
 }
 
@@ -4966,7 +4845,7 @@ interface TransactionResponse {
 export interface Insight {
   id: string; // 고유 식별자 (예: uuid)
   type: InsightType; // 인사이트 종류 (예: 'BUDGET_OVERRUN_WARNING')
-  severity: "info" | "warning" | "critical"; // 심각도
+  severity: 'info' | 'warning' | 'critical'; // 심각도
   title: string; // 인사이트 제목
   message: string; // 사용자에게 보여질 메시지
   detailsLink?: string; // 관련 상세 정보 페이지 링크 (선택)
@@ -4976,19 +4855,19 @@ export interface Insight {
 
 export enum InsightType {
   // MVP
-  CATEGORY_SPENDING_INCREASE = "CATEGORY_SPENDING_INCREASE",
-  CATEGORY_SPENDING_DECREASE = "CATEGORY_SPENDING_DECREASE",
-  BUDGET_NEARING_LIMIT = "BUDGET_NEARING_LIMIT",
-  BUDGET_OVERRUN_WARNING = "BUDGET_OVERRUN_WARNING",
-  RECENT_HIGH_SPENDING_ALERT = "RECENT_HIGH_SPENDING_ALERT",
+  CATEGORY_SPENDING_INCREASE = 'CATEGORY_SPENDING_INCREASE',
+  CATEGORY_SPENDING_DECREASE = 'CATEGORY_SPENDING_DECREASE',
+  BUDGET_NEARING_LIMIT = 'BUDGET_NEARING_LIMIT',
+  BUDGET_OVERRUN_WARNING = 'BUDGET_OVERRUN_WARNING',
+  RECENT_HIGH_SPENDING_ALERT = 'RECENT_HIGH_SPENDING_ALERT',
   // Post-MVP (구현 대상)
-  INCOME_SPIKE_ALERT = "INCOME_SPIKE_ALERT", // 수입 급증 알림
-  POSITIVE_MONTHLY_BALANCE = "POSITIVE_MONTHLY_BALANCE", // 월간 긍정적 잔액 (SAVING_GOAL_PROGRESS 단순화)
-  POTENTIAL_SUBSCRIPTION_REMINDER = "POTENTIAL_SUBSCRIPTION_REMINDER", // 구독 결제일 알림 (추정 기반)
+  INCOME_SPIKE_ALERT = 'INCOME_SPIKE_ALERT', // 수입 급증 알림
+  POSITIVE_MONTHLY_BALANCE = 'POSITIVE_MONTHLY_BALANCE', // 월간 긍정적 잔액 (SAVING_GOAL_PROGRESS 단순화)
+  POTENTIAL_SUBSCRIPTION_REMINDER = 'POTENTIAL_SUBSCRIPTION_REMINDER', // 구독 결제일 알림 (추정 기반)
 }
 
 // 주요 지출 카테고리 (예시, 추후 설정 또는 동적 분석으로 변경 가능)
-const MAJOR_EXPENSE_CATEGORIES = ["식비", "교통비", "생활용품"]; // 카테고리 이름 또는 ID
+const MAJOR_EXPENSE_CATEGORIES = ['식비', '교통비', '생활용품']; // 카테고리 이름 또는 ID
 const HIGH_SPENDING_THRESHOLD_AMOUNT = 100000; // 고액 지출 기준 (10만원)
 const HIGH_SPENDING_CHECK_DAYS = 7; // 최근 N일
 const BUDGET_USAGE_WARNING_THRESHOLD = 0.8; // 예산 80% 사용 시 경고
@@ -5023,84 +4902,65 @@ class InsightGenerationService {
       where: { userId_workspaceId: { userId, workspaceId } },
     });
     if (!membership) {
-      throw new ForbiddenError(
-        "이 워크스페이스의 인사이트를 생성할 권한이 없습니다."
-      );
+      throw new ForbiddenError('이 워크스페이스의 인사이트를 생성할 권한이 없습니다.');
     }
 
     try {
       // 1. 필요한 데이터 페칭 (Promise.all로 병렬 처리)
-      const monthlyStatsPromise = getMonthlyStatsService(
-        userId,
-        workspaceId,
-        month,
-        true
-      );
-      const budgetVsActualDataPromise = getBudgetVsActualStatsService(
-        userId,
-        workspaceId,
-        month
-      );
+      const monthlyStatsPromise = getMonthlyStatsService(userId, workspaceId, month, true);
+      const budgetVsActualDataPromise = getBudgetVsActualStatsService(userId, workspaceId, month);
 
       const recentTransactionsQuery = {
-        startDate: format(
-          subDays(today, HIGH_SPENDING_CHECK_DAYS - 1),
-          "yyyy-MM-dd"
-        ),
-        endDate: format(today, "yyyy-MM-dd"),
-        type: "expense" as const, // "expense"로 타입 명시
-        sortBy: "date" as const,
-        sortOrder: "desc" as const,
+        startDate: format(subDays(today, HIGH_SPENDING_CHECK_DAYS - 1), 'yyyy-MM-dd'),
+        endDate: format(today, 'yyyy-MM-dd'),
+        type: 'expense' as const, // "expense"로 타입 명시
+        sortBy: 'date' as const,
+        sortOrder: 'desc' as const,
         page: 1,
         pageSize: MAX_PAGE_SIZE,
       };
-      const recentTransactionsPromise: Promise<TransactionResponse> =
-        getTransactions(
-          userId,
-          workspaceId,
-          recentTransactionsQuery as GetTransactionsQuery & {
-            page: number;
-            pageSize: number;
-          }
-        );
+      const recentTransactionsPromise: Promise<TransactionResponse> = getTransactions(
+        userId,
+        workspaceId,
+        recentTransactionsQuery as GetTransactionsQuery & {
+          page: number;
+          pageSize: number;
+        }
+      );
 
       const currentMonthTransactionsQuery = {
-        startDate: format(startOfMonth(currentMonthDate), "yyyy-MM-dd"),
-        endDate: format(endOfMonth(currentMonthDate), "yyyy-MM-dd"),
-        type: "expense" as const,
+        startDate: format(startOfMonth(currentMonthDate), 'yyyy-MM-dd'),
+        endDate: format(endOfMonth(currentMonthDate), 'yyyy-MM-dd'),
+        type: 'expense' as const,
         page: 1,
         pageSize: MAX_PAGE_SIZE,
       };
-      const currentMonthTransactionsPromise: Promise<TransactionResponse> =
-        getTransactions(
-          userId,
-          workspaceId,
-          currentMonthTransactionsQuery as GetTransactionsQuery & {
-            page: number;
-            pageSize: number;
-          }
-        );
-
-      const previousMonthStartDate = startOfMonth(
-        subDays(startOfMonth(currentMonthDate), 1)
+      const currentMonthTransactionsPromise: Promise<TransactionResponse> = getTransactions(
+        userId,
+        workspaceId,
+        currentMonthTransactionsQuery as GetTransactionsQuery & {
+          page: number;
+          pageSize: number;
+        }
       );
+
+      const previousMonthStartDate = startOfMonth(subDays(startOfMonth(currentMonthDate), 1));
       const previousMonthEndDate = endOfMonth(previousMonthStartDate);
       const previousMonthTransactionsQuery = {
-        startDate: format(previousMonthStartDate, "yyyy-MM-dd"),
-        endDate: format(previousMonthEndDate, "yyyy-MM-dd"),
-        type: "expense" as const,
+        startDate: format(previousMonthStartDate, 'yyyy-MM-dd'),
+        endDate: format(previousMonthEndDate, 'yyyy-MM-dd'),
+        type: 'expense' as const,
         page: 1,
         pageSize: MAX_PAGE_SIZE,
       };
-      const previousMonthTransactionsPromise: Promise<TransactionResponse> =
-        getTransactions(
-          userId,
-          workspaceId,
-          previousMonthTransactionsQuery as GetTransactionsQuery & {
-            page: number;
-            pageSize: number;
-          }
-        );
+      const previousMonthTransactionsPromise: Promise<TransactionResponse> = getTransactions(
+        userId,
+        workspaceId,
+        previousMonthTransactionsQuery as GetTransactionsQuery & {
+          page: number;
+          pageSize: number;
+        }
+      );
 
       const [
         monthlyStats,
@@ -5118,17 +4978,10 @@ class InsightGenerationService {
 
       // 2. 각 인사이트 생성 로직 호출
       insights.push(
-        ...this._generateBudgetOverrunInsights(
-          budgetVsActualData,
-          currentIsoString,
-          month
-        )
+        ...this._generateBudgetOverrunInsights(budgetVsActualData, currentIsoString, month)
       );
       insights.push(
-        ...this._generateCategorySpendingChangeInsights(
-          monthlyStats,
-          currentIsoString
-        )
+        ...this._generateCategorySpendingChangeInsights(monthlyStats, currentIsoString)
       );
       insights.push(
         ...this._generateRecentHighSpendingInsights(
@@ -5138,15 +4991,9 @@ class InsightGenerationService {
       );
 
       // --- TODO 완료: 다른 인사이트 생성 로직 추가 ---
+      insights.push(...this._generateIncomeSpikeAlerts(monthlyStats, currentIsoString));
       insights.push(
-        ...this._generateIncomeSpikeAlerts(monthlyStats, currentIsoString)
-      );
-      insights.push(
-        ...this._generatePositiveMonthlyBalanceAlerts(
-          monthlyStats,
-          currentIsoString,
-          month
-        )
+        ...this._generatePositiveMonthlyBalanceAlerts(monthlyStats, currentIsoString, month)
       );
       insights.push(
         ...this._generatePotentialSubscriptionReminders(
@@ -5160,16 +5007,9 @@ class InsightGenerationService {
 
       return insights
         .filter((insight) => insight != null) // null인 인사이트 제거
-        .sort(
-          (a, b) =>
-            new Date(b.generatedAt).getTime() -
-            new Date(a.generatedAt).getTime()
-        );
+        .sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime());
     } catch (error) {
-      console.error(
-        `[InsightService] Error generating insights for ${month}:`,
-        error
-      );
+      console.error(`[InsightService] Error generating insights for ${month}:`, error);
       return [];
     }
   }
@@ -5189,13 +5029,11 @@ class InsightGenerationService {
           insights.push({
             id: uuidv4(),
             type: InsightType.BUDGET_OVERRUN_WARNING,
-            severity: "critical",
+            severity: 'critical',
             title: `${item.category} 예산 초과!`,
             message: `${item.category} 예산을 ${Math.abs(
               item.difference
-            ).toLocaleString()}원 초과했습니다. (사용률: ${(
-              usageRatio * 100
-            ).toFixed(0)}%)`,
+            ).toLocaleString()}원 초과했습니다. (사용률: ${(usageRatio * 100).toFixed(0)}%)`,
             detailsLink: `/settings/budget?month=${month}`,
             data: {
               category: item.category,
@@ -5209,13 +5047,11 @@ class InsightGenerationService {
           insights.push({
             id: uuidv4(),
             type: InsightType.BUDGET_NEARING_LIMIT,
-            severity: "warning",
+            severity: 'warning',
             title: `${item.category} 예산 소진 임박`,
             message: `${item.category} 예산의 ${(usageRatio * 100).toFixed(
               0
-            )}%를 사용했습니다. 남은 예산: ${(
-              item.budget - item.actual
-            ).toLocaleString()}원`,
+            )}%를 사용했습니다. 남은 예산: ${(item.budget - item.actual).toLocaleString()}원`,
             detailsLink: `/settings/budget?month=${month}`,
             data: {
               category: item.category,
@@ -5247,12 +5083,8 @@ class InsightGenerationService {
     const previousExpenses = monthlyStats.previous.categoryData.expenseData;
 
     MAJOR_EXPENSE_CATEGORIES.forEach((categoryName) => {
-      const currentCategory = currentExpenses.find(
-        (c) => c.categoryName === categoryName
-      );
-      const previousCategory = previousExpenses.find(
-        (c) => c.categoryName === categoryName
-      );
+      const currentCategory = currentExpenses.find((c) => c.categoryName === categoryName);
+      const previousCategory = previousExpenses.find((c) => c.categoryName === categoryName);
 
       if (currentCategory && previousCategory && previousCategory.amount > 0) {
         const change = currentCategory.amount - previousCategory.amount;
@@ -5263,17 +5095,17 @@ class InsightGenerationService {
             change > 0
               ? InsightType.CATEGORY_SPENDING_INCREASE
               : InsightType.CATEGORY_SPENDING_DECREASE;
-          const title = `${categoryName} 지출 ${change > 0 ? "증가" : "감소"}`;
+          const title = `${categoryName} 지출 ${change > 0 ? '증가' : '감소'}`;
           const message = `지난 달 대비 ${categoryName} 지출이 ${percentageChange.toFixed(
             0
           )}% (${change.toLocaleString()}원) ${
-            change > 0 ? "증가했습니다" : "감소했습니다"
+            change > 0 ? '증가했습니다' : '감소했습니다'
           }. 현재 ${currentCategory.amount.toLocaleString()}원 / 이전 ${previousCategory.amount.toLocaleString()}원`;
 
           insights.push({
             id: uuidv4(),
             type,
-            severity: "info",
+            severity: 'info',
             title,
             message,
             detailsLink: `/dashboard/transactions?categoryId=${currentCategory.categoryId}&month=${monthlyStats.month}`,
@@ -5297,30 +5129,22 @@ class InsightGenerationService {
     generatedAt: string
   ): Insight[] {
     const insights: Insight[] = [];
-    const highSpends = transactions.filter(
-      (tx) => tx.amount >= HIGH_SPENDING_THRESHOLD_AMOUNT
-    );
+    const highSpends = transactions.filter((tx) => tx.amount >= HIGH_SPENDING_THRESHOLD_AMOUNT);
 
     if (highSpends.length > 0) {
-      const totalHighSpendingAmount = highSpends.reduce(
-        (sum, tx) => sum + tx.amount,
-        0
-      );
+      const totalHighSpendingAmount = highSpends.reduce((sum, tx) => sum + tx.amount, 0);
       insights.push({
         id: uuidv4(),
         type: InsightType.RECENT_HIGH_SPENDING_ALERT,
-        severity: "warning",
+        severity: 'warning',
         title: `최근 ${HIGH_SPENDING_CHECK_DAYS}일간 고액 지출 발생`,
         message: `최근 ${HIGH_SPENDING_CHECK_DAYS}일 동안 ${HIGH_SPENDING_THRESHOLD_AMOUNT.toLocaleString()}원 이상 지출이 ${
           highSpends.length
         }건 (총 ${totalHighSpendingAmount.toLocaleString()}원) 발생했습니다.`,
         detailsLink: `/dashboard/transactions?startDate=${format(
           subDays(new Date(), HIGH_SPENDING_CHECK_DAYS - 1),
-          "yyyy-MM-dd"
-        )}&endDate=${format(
-          new Date(),
-          "yyyy-MM-dd"
-        )}&minAmount=${HIGH_SPENDING_THRESHOLD_AMOUNT}`,
+          'yyyy-MM-dd'
+        )}&endDate=${format(new Date(), 'yyyy-MM-dd')}&minAmount=${HIGH_SPENDING_THRESHOLD_AMOUNT}`,
         data: {
           count: highSpends.length,
           totalAmount: totalHighSpendingAmount,
@@ -5363,8 +5187,8 @@ class InsightGenerationService {
       insights.push({
         id: uuidv4(),
         type: InsightType.INCOME_SPIKE_ALERT,
-        severity: "info",
-        title: "🎉 월 수입 증가!",
+        severity: 'info',
+        title: '🎉 월 수입 증가!',
         message: `이번 달 수입이 지난 달 대비 ${incomeChangePercentage.toFixed(
           0
         )}% (${incomeChange.toLocaleString()}원) 증가한 ${currentIncome.toLocaleString()}원입니다! 멋진데요!`,
@@ -5398,8 +5222,8 @@ class InsightGenerationService {
       insights.push({
         id: uuidv4(),
         type: InsightType.POSITIVE_MONTHLY_BALANCE,
-        severity: "info",
-        title: "👍 훌륭한 저축 진행!",
+        severity: 'info',
+        title: '👍 훌륭한 저축 진행!',
         message: `이번 달 ${monthlyStats.balance.toLocaleString()}원의 흑자를 기록했습니다! 목표 달성을 향해 순항 중이시네요.`,
         detailsLink: `/dashboard/stats?type=kpi&month=${month}`, // KPI 페이지
         data: {
@@ -5429,22 +5253,13 @@ class InsightGenerationService {
     const insights: Insight[] = [];
     const today = new Date();
     const reminderStartDate = today;
-    const reminderEndDate = addDays(
-      today,
-      SUBSCRIPTION_REMINDER_LOOKAHEAD_DAYS
-    );
+    const reminderEndDate = addDays(today, SUBSCRIPTION_REMINDER_LOOKAHEAD_DAYS);
 
-    const currentMonthTxMapByDescAmount = new Map<
-      string,
-      Map<number, TransactionData>
-    >();
+    const currentMonthTxMapByDescAmount = new Map<string, Map<number, TransactionData>>();
     currentMonthTransactions.forEach((tx) => {
       if (tx.description) {
         if (!currentMonthTxMapByDescAmount.has(tx.description)) {
-          currentMonthTxMapByDescAmount.set(
-            tx.description,
-            new Map<number, TransactionData>()
-          );
+          currentMonthTxMapByDescAmount.set(tx.description, new Map<number, TransactionData>());
         }
         currentMonthTxMapByDescAmount.get(tx.description)!.set(tx.amount, tx);
       }
@@ -5454,31 +5269,27 @@ class InsightGenerationService {
 
     for (const prevTx of previousMonthTransactions) {
       if (
-        prevTx.type === "expense" &&
+        prevTx.type === 'expense' &&
         prevTx.description &&
         !(!prevTx.isInstallment || prevTx.originalTransactionId) &&
         !alertedPrevTxDescriptions.has(prevTx.description)
       ) {
         const prevTxDayOfMonth = getDate(parseISO(prevTx.date));
         const expectedPaymentDateThisMonth = parseISO(
-          `${currentReportMonth}-${String(prevTxDayOfMonth).padStart(2, "0")}`
+          `${currentReportMonth}-${String(prevTxDayOfMonth).padStart(2, '0')}`
         );
 
         if (
-          differenceInDays(expectedPaymentDateThisMonth, reminderStartDate) >=
-            0 &&
+          differenceInDays(expectedPaymentDateThisMonth, reminderStartDate) >= 0 &&
           differenceInDays(expectedPaymentDateThisMonth, reminderEndDate) <= 0
         ) {
           let alreadyPaidThisMonthSimilarAmount = false;
-          const similarTxsMap = currentMonthTxMapByDescAmount.get(
-            prevTx.description
-          );
+          const similarTxsMap = currentMonthTxMapByDescAmount.get(prevTx.description);
           if (similarTxsMap) {
             for (const currentTxAmount of similarTxsMap.keys()) {
               if (
                 prevTx.amount > 0 &&
-                (Math.abs(currentTxAmount - prevTx.amount) / prevTx.amount) *
-                  100 <=
+                (Math.abs(currentTxAmount - prevTx.amount) / prevTx.amount) * 100 <=
                   SUBSCRIPTION_AMOUNT_DEVIATION_PERCENT
               ) {
                 alreadyPaidThisMonthSimilarAmount = true;
@@ -5491,11 +5302,11 @@ class InsightGenerationService {
             insights.push({
               id: uuidv4(),
               type: InsightType.POTENTIAL_SUBSCRIPTION_REMINDER,
-              severity: "info",
-              title: "🔔 정기 결제 예정 알림 (추정)",
+              severity: 'info',
+              title: '🔔 정기 결제 예정 알림 (추정)',
               message: `[${prevTx.description}] 항목이 ${format(
                 expectedPaymentDateThisMonth,
-                "M월 d일"
+                'M월 d일'
               )}경 결제될 것으로 예상됩니다. (지난 달 ${prevTx.amount.toLocaleString()}원 기준)`,
               detailsLink: `/dashboard/transactions?keyword=${encodeURIComponent(
                 prevTx.description
@@ -5503,10 +5314,7 @@ class InsightGenerationService {
               data: {
                 description: prevTx.description,
                 lastAmount: prevTx.amount,
-                expectedDate: format(
-                  expectedPaymentDateThisMonth,
-                  "yyyy-MM-dd"
-                ),
+                expectedDate: format(expectedPaymentDateThisMonth, 'yyyy-MM-dd'),
                 prevTxDate: prevTx.date,
               },
               generatedAt,
@@ -7947,6 +7755,24 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 ```
 
 ```ts
+/* ./src/types/calendarTypes.ts */
+// src/types/calendarTypes.ts (또는 적절한 위치)
+export interface CategoryBreakdownItem {
+  categoryId: number; // 카테고리 ID도 함께 저장하면 유용
+  categoryName: string;
+  amount: number;
+}
+
+export interface DailyAggregatedCategoryData {
+  date: string; // 'YYYY-MM-DD' 형식
+  incomeItems: CategoryBreakdownItem[];
+  expenseItems: CategoryBreakdownItem[];
+  totalIncome: number;
+  totalExpense: number;
+}
+```
+
+```ts
 /* ./src/types/categoryTypes.ts */
 /* ./src/types/categoryTypes.ts */
 // 카테고리 관련 타입을 정의합니다.
@@ -8360,8 +8186,8 @@ export interface DetailStatsData {
 /* ./src/types/transactionTypes.ts */
 /* ./src/types/transactionTypes.ts */
 // 거래(Transaction)와 관련된 타입을 정의합니다.
-import type { Category } from "./categoryTypes";
-import type { CardIssuer } from "./commonTypes";
+import type { Category } from './categoryTypes';
+import type { CardIssuer } from './commonTypes';
 
 /**
  * 개별 거래 내역 데이터 구조
@@ -8371,7 +8197,7 @@ export interface TransactionData {
   id: number;
   date: string; // ISO 8601 형식의 날짜 문자열 (예: "2023-10-26")
   amount: number;
-  type: "income" | "expense";
+  type: 'income' | 'expense';
   description: string; // 빈 문자열일 수 있음
   categoryId: number;
   category: Category; // 연결된 카테고리 정보
@@ -8394,7 +8220,7 @@ export interface TransactionData {
 export interface CreateTransactionPayload {
   date: string;
   amount: number; // 일반 거래 시 실제 금액, 할부 원거래 시 총 할부 금액
-  type: "income" | "expense";
+  type: 'income' | 'expense';
   description?: string;
   categoryId: number;
   isInstallment?: boolean;
@@ -8421,15 +8247,15 @@ export type UpdateTransactionPayload = Partial<CreateTransactionPayload> & {
  * Zod 스키마 (GetTransactionsQuerySchema)와 동기화됩니다.
  */
 export interface GetTransactionsQuery {
-  type?: "income" | "expense";
+  type?: 'income' | 'expense';
   startDate?: string;
   endDate?: string;
   categoryId?: number;
   keyword?: string;
   minAmount?: number;
   maxAmount?: number;
-  sortBy?: "date" | "amount" | "category.name" | "isInstallment";
-  sortOrder?: "asc" | "desc";
+  sortBy?: 'date' | 'amount' | 'category.name' | 'isInstallment';
+  sortOrder?: 'asc' | 'desc';
   isInstallment?: boolean; // true: 할부만, false: 일반만, undefined: 전체
   originalTransactionId?: number; // 특정 원거래에 연결된 개별 할부금만 조회
   // 페이징 관련 필드 추가 가능
@@ -8442,9 +8268,7 @@ export interface GetTransactionsQuery {
  * 페이징 정보와 함께 실제 거래 내역 배열을 포함합니다.
  */
 export interface TransactionResponse {
-  currentPage: number;
   totalCount: number;
-  totalPages: number;
   transactions: TransactionData[];
 }
 ```
@@ -8617,6 +8441,8 @@ import { useRouter } from 'next/navigation';
 import TextField from '@/components/ui/TextField';
 import Alert from '@/components/ui/Alert';
 import Link from 'next/link'; // Next.js Link 컴포넌트 import
+import DailyTransactionCalendar from '@/components/dashboard/DailyTransactionCalendar';
+import { DailyAggregatedCategoryData } from '@/types/calendarTypes';
 
 interface CreateWorkspacePayload {
   name: string;
@@ -8700,6 +8526,21 @@ export default function DashboardRedesignPage() {
   const currentWorkspace = useMemo(() => {
     return storedWorkspaces.find((ws) => ws.id === activeWorkspaceId);
   }, [activeWorkspaceId, storedWorkspaces]);
+
+  const [currentYear, currentMonthIndex] = useMemo(() => {
+    const dateObj = parseISO(`${selectedMonth}-01`);
+    return [dateObj.getFullYear(), dateObj.getMonth()]; // getMonth()는 0-11 반환
+  }, [selectedMonth]);
+
+  const handleCalendarDateClick = (
+    date: Date,
+    dataForDate: DailyAggregatedCategoryData | undefined
+  ) => {
+    console.log('Calendar date clicked:', format(date, 'yyyy-MM-dd'));
+    if (dataForDate) {
+      console.log('Data for this date:', dataForDate);
+    }
+  };
 
   // 워크스페이스 목록 가져오기
   useEffect(() => {
@@ -9283,6 +9124,44 @@ export default function DashboardRedesignPage() {
           </div>
         </section>
 
+        <section className='my-6 sm:my-8'>
+          <h2 className='text-xl font-semibold text-gray-700 mb-4 px-1'>
+            일별 거래 달력 (카테고리별)
+          </h2>
+          {transactionsIsLoading ? ( // <<-- transactions 로딩 상태 사용
+            <Card className='h-[500px]'>
+              <div className='flex items-center justify-center h-full'>
+                <LoadingSpinner size='lg' />
+                <p className='ml-2'>달력 및 거래내역 로딩 중...</p>
+              </div>
+            </Card>
+          ) : dashboardDataError ? ( // dashboardDataError는 transactionsError 등을 포함할 수 있음
+            <Card>
+              <Alert type='error'>
+                거래 내역을 불러오는데 실패했습니다:{' '}
+                {dashboardDataError.message || '알 수 없는 오류'}
+              </Alert>
+            </Card>
+          ) : transactions && transactions.length > 0 ? ( // transactions 데이터 직접 사용
+            <DailyTransactionCalendar
+              year={currentYear}
+              month={currentMonthIndex}
+              transactions={transactions} // <<-- 전체 거래 내역 전달
+              onDateClick={handleCalendarDateClick}
+            />
+          ) : (
+            <Card>
+              <div className='text-center py-8'>
+                <InformationCircleIcon className='h-12 w-12 mx-auto text-gray-400 mb-2' />
+                <p className='text-gray-500'>해당 월의 거래 내역이 없습니다.</p>
+                <Button onClick={handleAddTransactionClick} variant='primary' className='mt-4'>
+                  첫 내역 추가하기
+                </Button>
+              </div>
+            </Card>
+          )}
+        </section>
+
         <section className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 sm:mb-8'>
           <ErrorBoundary
             fallback={
@@ -9416,7 +9295,7 @@ export default function DashboardRedesignPage() {
           </ErrorBoundary>
         </section>
 
-        <section>
+        {/* <section>
           <ErrorBoundary
             fallback={
               <Card title='최근 거래 내역'>
@@ -9448,7 +9327,7 @@ export default function DashboardRedesignPage() {
               )}
             </Card>
           </ErrorBoundary>
-        </section>
+        </section> */}
 
         {showTransactionForm && (
           <div className='fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out'>
@@ -11172,6 +11051,282 @@ export default function CategoryDistributionChart({
     </div>
   );
 }
+```
+
+```tsx
+/* ./src/components/dashboard/DailyTransactionCalendar.tsx */
+// src/components/dashboard/DailyTransactionCalendar.tsx
+import React, { useMemo } from 'react';
+import { format, getDaysInMonth, startOfMonth, isSameMonth, parseISO, isToday } from 'date-fns';
+import type { TransactionData } from '@/types/transactionTypes';
+import type { DailyAggregatedCategoryData, CategoryBreakdownItem } from '@/types/calendarTypes';
+import { cn } from '@/lib/utils';
+import { ArrowUpCircleIcon, ArrowDownCircleIcon } from '@heroicons/react/24/outline'; // 아이콘 추가
+
+interface DailyTransactionCalendarProps {
+  year: number;
+  month: number; // 0 (January) to 11 (December)
+  transactions: TransactionData[];
+  onDateClick?: (date: Date, dataForDate: DailyAggregatedCategoryData | undefined) => void;
+  // 활성 워크스페이스 ID는 부모에서 관리하므로, 이 컴포넌트는 데이터만 받습니다.
+}
+
+// 클라이언트 측에서 데이터를 집계하는 함수 (이전과 동일하게 유지 또는 필요시 최적화)
+const aggregateTransactionsForCalendar = (
+  transactions: TransactionData[],
+  year: number,
+  monthIndex: number
+): DailyAggregatedCategoryData[] => {
+  const dailyAggregates: { [dateStr: string]: DailyAggregatedCategoryData } = {};
+  const monthStartDate = new Date(year, monthIndex, 1);
+  const daysInCurrentMonth = getDaysInMonth(monthStartDate);
+
+  for (let day = 1; day <= daysInCurrentMonth; day++) {
+    const currentDate = new Date(year, monthIndex, day);
+    const dateStr = format(currentDate, 'yyyy-MM-dd');
+    dailyAggregates[dateStr] = {
+      date: dateStr,
+      incomeItems: [],
+      expenseItems: [],
+      totalIncome: 0,
+      totalExpense: 0,
+    };
+  }
+
+  transactions.forEach((tx) => {
+    const transactionDate = parseISO(tx.date);
+    if (transactionDate.getFullYear() === year && transactionDate.getMonth() === monthIndex) {
+      const dateStr = format(transactionDate, 'yyyy-MM-dd');
+      const dayAggregate = dailyAggregates[dateStr];
+
+      if (dayAggregate) {
+        const item: CategoryBreakdownItem = {
+          categoryId: tx.category.id,
+          categoryName: tx.category.name,
+          amount: tx.amount,
+        };
+
+        if (tx.type === 'income') {
+          const existingIncomeItem = dayAggregate.incomeItems.find(
+            (i) => i.categoryId === tx.category.id
+          );
+          if (existingIncomeItem) {
+            existingIncomeItem.amount += tx.amount;
+          } else {
+            dayAggregate.incomeItems.push(item);
+          }
+          dayAggregate.totalIncome += tx.amount;
+        } else if (tx.type === 'expense') {
+          const existingExpenseItem = dayAggregate.expenseItems.find(
+            (i) => i.categoryId === tx.category.id
+          );
+          if (existingExpenseItem) {
+            existingExpenseItem.amount += tx.amount;
+          } else {
+            dayAggregate.expenseItems.push(item);
+          }
+          dayAggregate.totalExpense += tx.amount;
+        }
+      }
+    }
+  });
+  return Object.values(dailyAggregates);
+};
+
+const CalendarDayCell: React.FC<{
+  day: number;
+  date: Date;
+  dataForThisDay?: DailyAggregatedCategoryData;
+  isCurrentMonth: boolean;
+  isTodayDate: boolean;
+  onClick?: () => void;
+}> = ({ day, date, dataForThisDay, isCurrentMonth, isTodayDate, onClick }) => {
+  const MAX_ITEMS_TO_SHOW = 2; // 각 타입별 최대 표시 항목 수
+
+  const renderCategoryItems = (items: CategoryBreakdownItem[], type: 'income' | 'expense') => {
+    if (!items || items.length === 0) return null;
+    const colorClass = type === 'income' ? 'text-green-600' : 'text-red-600';
+    const Icon = type === 'income' ? ArrowUpCircleIcon : ArrowDownCircleIcon;
+
+    return (
+      <div className='mb-1 last:mb-0'>
+        {items.slice(0, MAX_ITEMS_TO_SHOW).map((item, idx) => (
+          <div
+            key={`${type}-${idx}`}
+            className={`flex items-center justify-between text-xs ${colorClass}`}
+          >
+            <div className='flex items-center truncate mr-1'>
+              <Icon className='h-3 w-3 mr-1 flex-shrink-0 opacity-70' />
+              <span className='truncate' title={item.categoryName}>
+                {item.categoryName}
+              </span>
+            </div>
+            <span className='font-medium whitespace-nowrap'>{item.amount.toLocaleString()}</span>
+          </div>
+        ))}
+        {items.length > MAX_ITEMS_TO_SHOW && (
+          <div className={`text-xs text-center ${colorClass} opacity-80`}>
+            + {items.length - MAX_ITEMS_TO_SHOW}건 더보기
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className={cn(
+        'bg-white p-2.5 flex flex-col min-h-[120px] sm:min-h-[140px] relative group transition-shadow duration-200 ease-in-out',
+        isCurrentMonth ? 'hover:shadow-lg' : 'bg-slate-50 text-slate-400',
+        onClick && isCurrentMonth && 'cursor-pointer',
+        isTodayDate && 'ring-2 ring-blue-500 ring-inset z-10'
+      )}
+      onClick={onClick}
+    >
+      <div
+        className={cn(
+          'font-medium text-xs sm:text-sm',
+          isTodayDate && 'text-blue-600 font-bold',
+          !isCurrentMonth && 'text-slate-400'
+        )}
+      >
+        {day}
+      </div>
+      {isCurrentMonth &&
+      dataForThisDay &&
+      (dataForThisDay.incomeItems.length > 0 || dataForThisDay.expenseItems.length > 0) ? (
+        <div className='mt-1.5 text-xs flex-grow space-y-1 overflow-y-auto custom-scrollbar pr-1'>
+          {renderCategoryItems(dataForThisDay.incomeItems, 'income')}
+          {renderCategoryItems(dataForThisDay.expenseItems, 'expense')}
+        </div>
+      ) : isCurrentMonth ? (
+        <div className='flex-grow flex items-center justify-center text-xs text-slate-400'>
+          내역 없음
+        </div>
+      ) : null}
+      {isCurrentMonth &&
+        dataForThisDay &&
+        (dataForThisDay.totalIncome > 0 || dataForThisDay.totalExpense > 0) && (
+          <div className='mt-auto pt-1.5 border-t border-slate-200 text-xs font-semibold'>
+            {dataForThisDay.totalIncome > 0 && (
+              <p className='text-green-500 truncate'>
+                총 수입: {dataForThisDay.totalIncome.toLocaleString()}
+              </p>
+            )}
+            {dataForThisDay.totalExpense > 0 && (
+              <p className='text-red-500 truncate'>
+                총 지출: {dataForThisDay.totalExpense.toLocaleString()}
+              </p>
+            )}
+          </div>
+        )}
+    </div>
+  );
+};
+
+const DailyTransactionCalendar: React.FC<DailyTransactionCalendarProps> = ({
+  year,
+  month,
+  transactions,
+  onDateClick,
+}) => {
+  const monthStartDate = startOfMonth(new Date(year, month));
+  const daysInMonthCount = getDaysInMonth(monthStartDate);
+  const firstDayOfMonthIndex = monthStartDate.getDay();
+
+  const dailyAggregatedData = useMemo(() => {
+    return aggregateTransactionsForCalendar(transactions || [], year, month);
+  }, [transactions, year, month]);
+
+  const calendarDays: React.ReactElement[] = [];
+  const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+
+  // 이전 달의 날짜 채우기 (시작 부분)
+  const prevMonthEndDate = new Date(year, month, 0); // 이전 달의 마지막 날
+  const daysInPrevMonth = prevMonthEndDate.getDate();
+  for (let i = 0; i < firstDayOfMonthIndex; i++) {
+    const day = daysInPrevMonth - firstDayOfMonthIndex + 1 + i;
+    calendarDays.push(
+      <CalendarDayCell
+        key={`empty-start-${i}`}
+        day={day}
+        date={new Date(prevMonthEndDate.getFullYear(), prevMonthEndDate.getMonth(), day)}
+        isCurrentMonth={false}
+        isTodayDate={false}
+      />
+    );
+  }
+
+  // 현재 달의 날짜 채우기
+  for (let day = 1; day <= daysInMonthCount; day++) {
+    const currentDate = new Date(year, month, day);
+    const dateStr = format(currentDate, 'yyyy-MM-dd');
+    const dataForThisDay = dailyAggregatedData.find((d) => d.date === dateStr);
+
+    calendarDays.push(
+      <CalendarDayCell
+        key={dateStr}
+        day={day}
+        date={currentDate}
+        dataForThisDay={dataForThisDay}
+        isCurrentMonth={true}
+        isTodayDate={isToday(currentDate)}
+        onClick={() => onDateClick && onDateClick(currentDate, dataForThisDay)}
+      />
+    );
+  }
+
+  // 다음 달의 날짜 채우기 (끝 부분)
+  const totalCellsRendered = firstDayOfMonthIndex + daysInMonthCount;
+  const nextMonthDaysNeeded = (7 - (totalCellsRendered % 7)) % 7;
+  const nextMonthStartDate = new Date(year, month + 1, 1);
+
+  for (let i = 0; i < nextMonthDaysNeeded; i++) {
+    const day = i + 1;
+    calendarDays.push(
+      <CalendarDayCell
+        key={`empty-end-${i}`}
+        day={day}
+        date={new Date(nextMonthStartDate.getFullYear(), nextMonthStartDate.getMonth(), day)}
+        isCurrentMonth={false}
+        isTodayDate={false}
+      />
+    );
+  }
+
+  return (
+    <div className='bg-white p-3 sm:p-4 rounded-xl shadow-xl border border-slate-200'>
+      <div className='grid grid-cols-7 gap-px text-center text-xs sm:text-sm font-semibold text-slate-600 mb-2'>
+        {daysOfWeek.map((dayName) => (
+          <div key={dayName} className='py-2'>
+            {dayName}
+          </div>
+        ))}
+      </div>
+      <div className='grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden'>
+        {calendarDays}
+      </div>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #cbd5e1; /* slate-300 */
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #94a3b8; /* slate-400 */
+        }
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 #f1f5f9; /* thumb track for firefox */
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default DailyTransactionCalendar;
 ```
 
 ```tsx

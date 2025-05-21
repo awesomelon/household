@@ -111,6 +111,26 @@ export function getSupportedCardIssuers(): string[] {
 }
 
 /**
+ * 일시불 카드 결제의 다음달 결제일을 계산합니다.
+ * @param purchaseDate 결제 날짜 (Date 객체 또는 ISO 문자열)
+ * @returns 다음달 10일 기준 결제일 (Date 객체)
+ */
+export function calculateOneTimeCardPaymentDate(
+  purchaseDateInput: Date | string
+): Date {
+  const baseDate =
+    typeof purchaseDateInput === "string"
+      ? parseISO(purchaseDateInput)
+      : purchaseDateInput;
+
+  // 다음달 같은 날짜로 설정
+  const nextMonth = addMonths(baseDate, 1);
+
+  // 결제일은 10일로 설정
+  return startOfDay(setDate(nextMonth, 10));
+}
+
+/**
  * 구매일로부터 N번째 할부금의 납부일(다음 달 10일 기준)을 계산합니다.
  * @param purchaseDate 원거래 구매일 (Date 객체 또는 ISO 문자열)
  * @param installmentNumber 할부 회차 (1부터 시작)

@@ -43,6 +43,7 @@ export default function TransactionEditModal({
     type: "expense" | "income" | undefined;
     description: string;
     categoryId: string;
+    paymentMethod: "cash" | "card"; // 결제 방식 추가
     isInstallment: boolean;
     installmentMonths: string;
     totalInstallmentAmount: string;
@@ -53,6 +54,7 @@ export default function TransactionEditModal({
     type: "expense",
     description: "",
     categoryId: "",
+    paymentMethod: "cash", // 기본값은 현금
     isInstallment: false,
     installmentMonths: "",
     totalInstallmentAmount: "",
@@ -62,6 +64,22 @@ export default function TransactionEditModal({
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(""); // API 에러 메시지
   const [errors, setErrors] = useState<{ [key: string]: string }>({}); // 폼 필드별 유효성 검사 에러
+
+  // 할부 개월 수 옵션 생성
+  const installmentOptions = [
+    { value: "1", label: "일시불" },
+    { value: "2", label: "2개월" },
+    { value: "3", label: "3개월" },
+    { value: "4", label: "4개월" },
+    { value: "5", label: "5개월" },
+    { value: "6", label: "6개월" },
+    { value: "7", label: "7개월" },
+    { value: "8", label: "8개월" },
+    { value: "9", label: "9개월" },
+    { value: "10", label: "10개월" },
+    { value: "11", label: "11개월" },
+    { value: "12", label: "12개월" },
+  ];
 
   // 수정 대상 거래가 할부 '원거래'인지 판별
   const isOriginalInstallment = useMemo(() => {
@@ -73,12 +91,19 @@ export default function TransactionEditModal({
 
   useEffect(() => {
     if (transaction) {
+      // 카드/현금 결제 방식 판별
+      let paymentMethod: "cash" | "card" = "cash";
+      if (transaction.installmentCardIssuer) {
+        paymentMethod = "card";
+      }
+
       setFormData({
         date: new Date(transaction.date).toISOString().split("T")[0],
         amount: transaction.amount.toString(), // 항상 레코드의 amount를 표시
         type: transaction.type,
         description: transaction.description || "",
         categoryId: transaction.categoryId.toString(),
+        paymentMethod,
         isInstallment: transaction.isInstallment || false,
         installmentMonths: transaction.installmentMonths?.toString() || "",
         totalInstallmentAmount:
@@ -138,16 +163,43 @@ export default function TransactionEditModal({
         if (name === "type") {
           newState.categoryId = "";
           if (newValue === "income") {
+            newState.paymentMethod = "cash"; // 수입은 항상 현금으로 설정
             newState.isInstallment = false;
             newState.installmentMonths = "";
             newState.totalInstallmentAmount = "";
             newState.installmentCardIssuer = null;
           }
         }
+
+        // 결제 방식 변경 시 처리
+        if (name === "paymentMethod") {
+          if (newValue === "cash") {
+            // 현금으로 변경 시 할부 관련 정보 초기화
+            newState.isInstallment = false;
+            newState.installmentMonths = "";
+            newState.totalInstallmentAmount = "";
+            newState.installmentCardIssuer = null;
+          } else if (newValue === "card") {
+            // 카드로 변경 시 기본 카드사 설정
+            newState.installmentCardIssuer = "현대카드";
+          }
+        }
+
+        // 할부 개월 수 변경 시
+        if (name === "installmentMonths") {
+          // 일시불(1개월)인 경우 할부 아님으로 설정
+          if (value === "1") {
+            newState.isInstallment = false;
+            newState.totalInstallmentAmount = "";
+          } else {
+            // 2개월 이상인 경우 할부로 설정
+            newState.isInstallment = true;
+          }
+        }
+
         if (name === "isInstallment" && !newValue) {
           newState.installmentMonths = "";
           newState.totalInstallmentAmount = "";
-          newState.installmentCardIssuer = null;
         }
         if (name === "totalInstallmentAmount" && newState.isInstallment) {
           newState.amount = newValue as string;
@@ -179,13 +231,21 @@ export default function TransactionEditModal({
       if (!formData.categoryId)
         newErrors.categoryId = "카테고리를 선택해주세요.";
 
+      // 결제 방식이 카드인 경우 카드사 선택 확인
+      if (
+        formData.paymentMethod === "card" &&
+        !formData.installmentCardIssuer
+      ) {
+        newErrors.installmentCardIssuer = "카드사를 선택해주세요.";
+      }
+
       if (formData.isInstallment) {
         if (formData.type === "income") {
           newErrors.isInstallment = "수입 거래는 할부를 설정할 수 없습니다.";
         }
         const installmentMonthsValue = parseInt(formData.installmentMonths, 10);
         if (!formData.installmentMonths)
-          newErrors.installmentMonths = "할부 개월수를 입력해주세요.";
+          newErrors.installmentMonths = "할부 개월수를 선택해주세요.";
         else if (isNaN(installmentMonthsValue) || installmentMonthsValue < 2)
           newErrors.installmentMonths =
             "할부 개월수는 2개월 이상이어야 합니다.";
@@ -201,9 +261,6 @@ export default function TransactionEditModal({
         )
           newErrors.totalInstallmentAmount =
             "총 할부 금액은 0보다 커야 합니다.";
-
-        if (!formData.installmentCardIssuer)
-          newErrors.installmentCardIssuer = "할부 카드사를 선택해주세요.";
       } else {
         // 할부가 아닌 경우 (일반 거래로 수정 시)
         const amountValue = parseFloat(formData.amount);
@@ -253,6 +310,30 @@ export default function TransactionEditModal({
       if (parseInt(formData.categoryId, 10) !== transaction.categoryId) {
         dataToSend.categoryId = parseInt(formData.categoryId, 10);
       }
+
+      // 카드/현금 결제 방식에 따른 처리
+      const wasCard = !!transaction.installmentCardIssuer;
+      const isNowCard = formData.paymentMethod === "card";
+
+      // 카드에서 현금으로 변경된 경우 installmentCardIssuer를 null로 설정
+      if (wasCard && !isNowCard) {
+        dataToSend.installmentCardIssuer = null;
+        dataToSend.isInstallment = false;
+      }
+      // 현금에서 카드로 변경된 경우 installmentCardIssuer 설정
+      else if (!wasCard && isNowCard) {
+        dataToSend.installmentCardIssuer =
+          formData.installmentCardIssuer as CardIssuer;
+      }
+      // 카드에서 카드로 변경된 경우 카드사가 변경되었는지 확인
+      else if (
+        isNowCard &&
+        formData.installmentCardIssuer !== transaction.installmentCardIssuer
+      ) {
+        dataToSend.installmentCardIssuer =
+          formData.installmentCardIssuer as CardIssuer;
+      }
+
       if (formData.isInstallment !== (transaction.isInstallment || false)) {
         dataToSend.isInstallment = formData.isInstallment;
       }
@@ -271,13 +352,6 @@ export default function TransactionEditModal({
         const monthsNum = parseInt(formData.installmentMonths, 10);
         if (monthsNum !== (transaction.installmentMonths ?? undefined)) {
           dataToSend.installmentMonths = monthsNum;
-        }
-        if (
-          formData.installmentCardIssuer !==
-          (transaction.installmentCardIssuer || null)
-        ) {
-          dataToSend.installmentCardIssuer =
-            formData.installmentCardIssuer as CardIssuer;
         }
       } else {
         // 일반 거래로 설정/수정 시
@@ -419,6 +493,41 @@ export default function TransactionEditModal({
             )}
           </div>
 
+          {/* 결제 방식 선택 (수입 유형이 아닐 때만 표시) */}
+          {formData.type === "expense" && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                결제 방식
+              </label>
+              <div className="flex">
+                <label className="inline-flex items-center mr-6">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash"
+                    checked={formData.paymentMethod === "cash"}
+                    onChange={handleChange}
+                    disabled={disableNonDescriptionFields} // 비활성화 조건 적용
+                    className="form-radio h-4 w-4 text-blue-600"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">현금</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="card"
+                    checked={formData.paymentMethod === "card"}
+                    onChange={handleChange}
+                    disabled={disableNonDescriptionFields} // 비활성화 조건 적용
+                    className="form-radio h-4 w-4 text-blue-600"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">카드</span>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* 금액 필드 */}
           <TextField
             id="edit-amount"
@@ -454,8 +563,8 @@ export default function TransactionEditModal({
             error={errors.categoryId}
           />
 
-          {/* --- 할부 입력 필드 (원거래 수정 시에만 활성화) --- */}
-          {formData.type === "expense" && ( // 수입 유형일 때는 할부 섹션 숨김
+          {/* 카드 결제일 경우 추가 정보 입력 필드 */}
+          {formData.type === "expense" && formData.paymentMethod === "card" && (
             <div
               className={`space-y-4 rounded-md border p-3 ${
                 disableNonDescriptionFields
@@ -463,73 +572,57 @@ export default function TransactionEditModal({
                   : "border-gray-200"
               }`}
             >
-              <div className="flex items-center">
-                <input
-                  id="edit-isInstallment"
-                  name="isInstallment"
-                  type="checkbox"
-                  checked={formData.isInstallment}
-                  onChange={handleChange}
-                  disabled={disableNonDescriptionFields} // 비활성화 조건 적용
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="edit-isInstallment"
-                  className="ml-2 block text-sm text-gray-900"
-                >
-                  할부 결제 {displayEstimatedFee}
-                </label>
-              </div>
-              {errors.isInstallment && !disableNonDescriptionFields && (
-                <p className="text-xs text-red-500">{errors.isInstallment}</p>
-              )}
+              {/* 카드사 선택 필드 */}
+              <SelectField
+                id="edit-installmentCardIssuer"
+                name="installmentCardIssuer"
+                label="카드사"
+                value={
+                  formData.installmentCardIssuer
+                    ? formData.installmentCardIssuer
+                    : ""
+                }
+                onChange={handleChange}
+                options={[
+                  { value: "", label: "카드사 선택" },
+                  ...SUPPORTED_CARD_ISSUERS.map((issuer) => ({
+                    value: issuer,
+                    label: issuer,
+                  })),
+                ]}
+                required
+                disabled={disableNonDescriptionFields} // 비활성화 조건 적용
+                error={errors.installmentCardIssuer}
+              />
 
+              {/* 할부 개월 수 선택 필드 */}
+              <SelectField
+                id="edit-installmentMonths"
+                name="installmentMonths"
+                label="할부 개월 수"
+                value={formData.installmentMonths}
+                onChange={handleChange}
+                options={installmentOptions}
+                required
+                disabled={disableNonDescriptionFields} // 비활성화 조건 적용
+                error={errors.installmentMonths}
+              />
+
+              {/* 할부 선택 시에만 총 할부 금액 입력 필드 표시 */}
               {formData.isInstallment && (
-                <>
-                  <TextField
-                    id="edit-totalInstallmentAmount"
-                    name="totalInstallmentAmount"
-                    label="총 할부 금액"
-                    type="number"
-                    value={formData.totalInstallmentAmount}
-                    onChange={handleChange}
-                    placeholder="예: 300000"
-                    required={!!isOriginalInstallment}
-                    disabled={disableNonDescriptionFields} // 비활성화 조건 적용
-                    error={errors.totalInstallmentAmount}
-                    min="0"
-                  />
-                  <TextField
-                    id="edit-installmentMonths"
-                    name="installmentMonths"
-                    label="할부 개월 수 (2개월 이상)"
-                    type="number"
-                    value={formData.installmentMonths}
-                    onChange={handleChange}
-                    placeholder="예: 3"
-                    required={!!isOriginalInstallment}
-                    disabled={disableNonDescriptionFields} // 비활성화 조건 적용
-                    error={errors.installmentMonths}
-                    min="2"
-                  />
-                  <SelectField
-                    id="edit-installmentCardIssuer"
-                    name="installmentCardIssuer"
-                    label="할부 카드사"
-                    value={formData.installmentCardIssuer || ""}
-                    onChange={handleChange}
-                    options={[
-                      { value: "", label: "카드사 선택" },
-                      ...SUPPORTED_CARD_ISSUERS.map((issuer) => ({
-                        value: issuer,
-                        label: issuer,
-                      })),
-                    ]}
-                    required={!!isOriginalInstallment} // 원거래 수정 시 필수
-                    disabled={disableNonDescriptionFields} // 비활성화 조건 적용
-                    error={errors.installmentCardIssuer}
-                  />
-                </>
+                <TextField
+                  id="edit-totalInstallmentAmount"
+                  name="totalInstallmentAmount"
+                  label="총 할부 금액"
+                  type="number"
+                  value={formData.totalInstallmentAmount}
+                  onChange={handleChange}
+                  placeholder="예: 300000"
+                  required={!!isOriginalInstallment}
+                  disabled={disableNonDescriptionFields} // 비활성화 조건 적용
+                  error={errors.totalInstallmentAmount}
+                  min="0"
+                />
               )}
             </div>
           )}
