@@ -23,19 +23,6 @@ const transporter = nodemailer.createTransport({
   // }
 });
 
-console.log({
-  host: 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587', 10),
-  secure: parseInt(process.env.SMTP_PORT || '587', 10) === 465, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  // tls: {
-  //   ciphers:'SSLv3' // 간혹 TLS 협상 문제시 필요할 수 있음
-  // }
-});
-
 /**
  * 이메일을 발송합니다.
  * @param mailOptions 이메일 옵션 (to, subject, html 등)

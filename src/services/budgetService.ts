@@ -1,16 +1,10 @@
 // src/services/budgetService.ts
-import { prisma } from "@/lib/prisma";
-import type { BudgetPayload } from "@/lib/schemas/budgetApiSchemas"; // BudgetPayload에 workspaceId가 포함되지 않는다고 가정
-import {
-  ApiError,
-  NotFoundError,
-  ValidationError,
-  ForbiddenError,
-} from "./apiError";
-import { Prisma, type Budget, type Category } from "@prisma/client"; // Prisma 생성 타입
+import { prisma } from '@/lib/prisma';
+import type { BudgetPayload } from '@/lib/schemas/budgetApiSchemas'; // BudgetPayload에 workspaceId가 포함되지 않는다고 가정
+import { ApiError, NotFoundError, ValidationError, ForbiddenError } from './apiError';
+import { Prisma, type Budget, type Category } from '@prisma/client'; // Prisma 생성 타입
 
-interface BudgetWithCategory
-  extends Omit<Budget, "categoryId" | "workspaceId"> {
+interface BudgetWithCategory extends Omit<Budget, 'categoryId' | 'workspaceId'> {
   category: Category;
 }
 
@@ -30,28 +24,24 @@ export async function getBudgetsByMonth(
     where: { userId_workspaceId: { userId, workspaceId } },
   });
   if (!membership) {
-    throw new ForbiddenError(
-      "이 워크스페이스의 예산을 조회할 권한이 없습니다."
-    );
+    throw new ForbiddenError('이 워크스페이스의 예산을 조회할 권한이 없습니다.');
   }
 
   try {
     const budgets = await prisma.budget.findMany({
       where: { month, workspaceId }, // DB 조회 시 workspaceId 사용
       include: { category: true },
-      orderBy: { category: { name: "asc" } },
+      orderBy: { category: { name: 'asc' } },
     });
     // Prisma 반환 타입에서 categoryId, workspaceId를 제외하고 category 객체를 포함하도록 매핑
     return budgets.map((budget) => {
       const { categoryId, workspaceId, ...rest } = budget;
 
-      console.log("categoryId", categoryId);
-      console.log("workspaceId", workspaceId);
       return rest;
     }) as BudgetWithCategory[];
   } catch (error) {
-    console.error("[BudgetService] getBudgetsByMonth error:", error);
-    throw new ApiError("예산 조회 중 오류가 발생했습니다.");
+    console.error('[BudgetService] getBudgetsByMonth error:', error);
+    throw new ApiError('예산 조회 중 오류가 발생했습니다.');
   }
 }
 
@@ -71,9 +61,7 @@ export async function upsertBudget(
     where: { userId_workspaceId: { userId, workspaceId } },
   });
   if (!membership) {
-    throw new ForbiddenError(
-      "이 워크스페이스에 예산을 설정할 권한이 없습니다."
-    );
+    throw new ForbiddenError('이 워크스페이스에 예산을 설정할 권한이 없습니다.');
   }
   // TODO: 역할(role) 기반 권한 확인 (예: MEMBER 이상만 가능)
 
@@ -89,8 +77,8 @@ export async function upsertBudget(
       `ID가 ${categoryId}인 카테고리를 현재 워크스페이스에서 찾을 수 없습니다.`
     );
   }
-  if (category.type !== "expense") {
-    throw new ValidationError("지출 카테고리에만 예산을 설정할 수 있습니다.");
+  if (category.type !== 'expense') {
+    throw new ValidationError('지출 카테고리에만 예산을 설정할 수 있습니다.');
   }
 
   try {
@@ -103,27 +91,15 @@ export async function upsertBudget(
       create: { month, categoryId, amount, workspaceId }, // 생성 시 workspaceId 연결
       include: { category: true },
     });
-    const {
-      categoryId: _categoryId,
-      workspaceId: _workspaceId,
-      ...rest
-    } = budget;
-
-    console.log("categoryId", _categoryId);
-    console.log("workspaceId", _workspaceId);
+    const { categoryId: _categoryId, workspaceId: _workspaceId, ...rest } = budget;
 
     return rest as BudgetWithCategory;
   } catch (error: unknown) {
-    console.error("[BudgetService] upsertBudget error:", error);
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      throw new ValidationError(
-        "이미 해당 월, 카테고리, 워크스페이스에 대한 예산이 존재합니다."
-      );
+    console.error('[BudgetService] upsertBudget error:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw new ValidationError('이미 해당 월, 카테고리, 워크스페이스에 대한 예산이 존재합니다.');
     }
-    throw new ApiError("예산 저장 중 오류가 발생했습니다.");
+    throw new ApiError('예산 저장 중 오류가 발생했습니다.');
   }
 }
 
@@ -142,9 +118,7 @@ export async function deleteBudget(
     where: { userId_workspaceId: { userId, workspaceId } },
   });
   if (!membership) {
-    throw new ForbiddenError(
-      "이 워크스페이스의 예산을 삭제할 권한이 없습니다."
-    );
+    throw new ForbiddenError('이 워크스페이스의 예산을 삭제할 권한이 없습니다.');
   }
   // TODO: 역할(role) 기반 권한 확인
 
@@ -154,9 +128,7 @@ export async function deleteBudget(
   });
 
   if (!existingBudget) {
-    throw new NotFoundError(
-      `ID가 ${budgetId}인 예산을 현재 워크스페이스에서 찾을 수 없습니다.`
-    );
+    throw new NotFoundError(`ID가 ${budgetId}인 예산을 현재 워크스페이스에서 찾을 수 없습니다.`);
   }
 
   try {
@@ -164,7 +136,7 @@ export async function deleteBudget(
       where: { id: budgetId, workspaceId: workspaceId }, // workspaceId 조건 추가
     });
   } catch (error) {
-    console.error("[BudgetService] deleteBudget error:", error);
-    throw new ApiError("예산 삭제 중 오류가 발생했습니다.");
+    console.error('[BudgetService] deleteBudget error:', error);
+    throw new ApiError('예산 삭제 중 오류가 발생했습니다.');
   }
 }

@@ -1,9 +1,9 @@
 // src/lib/authOptions.ts
-import { NextAuthOptions, User as NextAuthUser } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { Adapter } from "next-auth/adapters"; // Adapter 타입을 명시적으로 가져옴
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "@/lib/prisma"; // prisma 클라이언트 경로 확인
+import { NextAuthOptions, User as NextAuthUser } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import { Adapter } from 'next-auth/adapters'; // Adapter 타입을 명시적으로 가져옴
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import { prisma } from '@/lib/prisma'; // prisma 클라이언트 경로 확인
 
 export const authOptions: NextAuthOptions = {
   // Prisma 어댑터 설정
@@ -23,16 +23,14 @@ export const authOptions: NextAuthOptions = {
 
   // 세션 관리 전략
   session: {
-    strategy: "jwt", // JWT (JSON Web Token) 사용을 권장
+    strategy: 'jwt', // JWT (JSON Web Token) 사용을 권장
     // maxAge: 30 * 24 * 60 * 60, // 30일 (선택 사항)
     // updateAge: 24 * 60 * 60, // 24시간마다 업데이트 (선택 사항)
   },
 
   // 콜백 함수 설정
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      // 기본적으로 모든 로그인 허용
-      console.log("signIn", { user, account, profile, email, credentials });
+    async signIn() {
       return true;
     },
     async redirect({ url, baseUrl }) {
@@ -41,23 +39,18 @@ export const authOptions: NextAuthOptions = {
     },
 
     // user
-    async session({ session, token, user }) {
-      console.log("session", { session, token, user });
-
+    async session({ session, token }) {
       // 클라이언트로 전송될 세션 객체를 커스터마이징합니다.
       if (token && session.user) {
         // Prisma User 모델의 ID (cuid 또는 uuid)를 세션에 포함
-        (session.user as NextAuthUser & { id: string }).id =
-          token.sub as string;
+        (session.user as NextAuthUser & { id: string }).id = token.sub as string;
         // 필요한 경우 다른 정보도 추가 (예: 역할)
         // (session.user as any).role = token.role;
       }
       return session;
     },
 
-    async jwt({ token, user, account, profile, isNewUser }) {
-      console.log("jwt", { token, user, account, profile, isNewUser });
-
+    async jwt({ token, user }) {
       // JWT가 생성되거나 업데이트될 때마다 호출됩니다.
       if (user) {
         // 로그인 시 사용자 ID(token.sub)는 NextAuth가 자동으로 user.id로 설정합니다.
@@ -72,14 +65,14 @@ export const authOptions: NextAuthOptions = {
   },
 
   // 디버깅 (개발 환경에서만 유용)
-  debug: process.env.NODE_ENV === "development",
+  debug: process.env.NODE_ENV === 'development',
 
   // NextAuth.js가 사용하는 시크릿 값 (JWT 서명 등에 사용)
   secret: process.env.NEXTAUTH_SECRET,
 
   // 커스텀 페이지 (선택 사항)
   pages: {
-    signIn: "/auth/signin",
+    signIn: '/auth/signin',
     // signOut: '/auth/signout', // 필요시 주석 해제
     // error: '/auth/error', // 필요시 주석 해제
     // verifyRequest: '/auth/verify-request', // 이메일 인증 시 필요
