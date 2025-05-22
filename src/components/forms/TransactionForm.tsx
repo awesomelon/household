@@ -252,6 +252,7 @@ export default function TransactionForm({
       description: formData.description,
       categoryId: categoryIdAsNumber,
       isInstallment: formData.isInstallment,
+      useNextMonthForOneTime: true,
       amount: 0,
     };
 

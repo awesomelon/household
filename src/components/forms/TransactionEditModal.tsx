@@ -317,7 +317,7 @@ export default function TransactionEditModal({
 
       // 카드에서 현금으로 변경된 경우 installmentCardIssuer를 null로 설정
       if (wasCard && !isNowCard) {
-        dataToSend.installmentCardIssuer = null;
+        dataToSend.installmentCardIssuer = "";
         dataToSend.isInstallment = false;
       }
       // 현금에서 카드로 변경된 경우 installmentCardIssuer 설정
